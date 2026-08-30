@@ -1,0 +1,526 @@
+{% load static %}
+
+<style>
+    /* ========== Dashboard Styles ========== */
+    .hero-card {
+        background: linear-gradient(135deg, #123458 0%, #1e4a7a 100%);
+        color: white;
+        border-radius: 18px;
+        overflow: hidden;
+    }
+    .hero-card .btn {
+        border-radius: 12px;
+        font-weight: 500;
+        transition: all 0.25s ease;
+    }
+    .hero-card .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .kpi-card {
+        border: none;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        cursor: default;
+    }
+    .kpi-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.1) !important;
+    }
+    .kpi-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .section-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+    .section-card .card-header {
+        background: white;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 1rem 1.25rem;
+        border-radius: 16px 16px 0 0 !important;
+    }
+
+    .empty-state {
+        padding: 2.5rem 1rem;
+        text-align: center;
+        color: #94a3b8;
+    }
+    .empty-state i {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        display: block;
+        opacity: 0.6;
+    }
+
+    .progress {
+        height: 10px;
+        border-radius: 50px;
+        background: #e2e8f0;
+    }
+    .progress-bar {
+        border-radius: 50px;
+    }
+
+    .table > :not(caption) > * > * {
+        padding: 0.75rem 1rem;
+    }
+
+    .badge-count {
+        font-size: 0.8rem;
+        padding: 0.35em 0.7em;
+        border-radius: 50px;
+    }
+
+    /* Popup */
+    .custom-popup {
+        position: absolute;
+        background: white;
+        border-radius: 12px;
+        padding: 12px 16px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+        z-index: 9999;
+        display: none;
+        max-width: 260px;
+        pointer-events: none;
+        border: 1px solid #e2e8f0;
+    }
+</style>
+
+<!-- ================= HERO ================= -->
+<div class="card hero-card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h3 class="fw-bold mb-2">Dashboard Customer Segmentation</h3>
+                <p class="mb-3 opacity-75">
+                    PT Sinar Multi Kemindo · Sistem Pendukung Keputusan menggunakan Algoritma K-Means Clustering
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'upload_data' %}" class="btn btn-light text-primary">
+                        <i class="fas fa-upload me-2"></i>Upload Dataset
+                    </a>
+                    <a href="{% url 'run_clustering' %}" class="btn btn-success">
+                        <i class="fas fa-play me-2"></i>Proses Clustering
+                    </a>
+                    <a href="{% url 'clustering_result' %}" class="btn btn-warning text-dark">
+                        <i class="fas fa-chart-pie me-2"></i>Hasil Clustering
+                    </a>
+                    <a href="{% url 'download_report' %}" class="btn btn-danger">
+                        <i class="fas fa-file-pdf me-2"></i>Download Laporan
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <img src="{% static 'images/klasterku.png' %}" class="img-fluid" style="max-width:140px; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));" alt="KlasterKu">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= KPI ================= -->
+<div class="row g-3 mb-4">
+    <!-- Total Customer -->
+    <div class="col-6 col-xl-3">
+        <div class="card kpi-card shadow-sm h-100" data-title="Total Customer" data-value="{{ total_customer|default:0 }}" data-desc="Jumlah keseluruhan customer aktif">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #2563eb, #1d4ed8);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Total Customer</div>
+                    <h3 class="fw-bold mb-0 counter">{{ total_customer|default:0 }}</h3>
+                    <small class="text-success">Customer Aktif</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Dataset -->
+    <div class="col-6 col-xl-3">
+        <div class="card kpi-card shadow-sm h-100" data-title="Total Dataset" data-value="{{ total_data|default:0 }}" data-desc="Total data transaksi yang diupload">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #16a34a, #15803d);">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Total Dataset</div>
+                    <h3 class="fw-bold mb-0 counter">{{ total_data|default:0 }}</h3>
+                    <small class="text-success">Data Transaksi</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Produk -->
+    <div class="col-6 col-xl-3">
+        <div class="card kpi-card shadow-sm h-100" data-title="Total Produk" data-value="{{ total_produk|default:0 }}" data-desc="Jumlah produk yang aktif terjual">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Total Produk</div>
+                    <h3 class="fw-bold mb-0 counter">{{ total_produk|default:0 }}</h3>
+                    <small class="text-success">Produk Aktif</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Cluster -->
+    <div class="col-6 col-xl-3">
+        <div class="card kpi-card shadow-sm h-100" data-title="Total Cluster" data-value="{{ total_cluster|default:0 }}" data-desc="Jumlah cluster hasil algoritma K-Means">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #dc2626, #b91c1c);">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Total Cluster</div>
+                    <h3 class="fw-bold mb-0 counter">{{ total_cluster|default:0 }}</h3>
+                    <small class="text-success">K-Means</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= STATISTIK + TOP CUSTOMER ================= -->
+<div class="row g-4 mb-4">
+    <!-- Chart Statistik -->
+    <div class="col-lg-8">
+        <div class="card section-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-chart-column text-primary me-2"></i>Statistik Customer
+                </h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 300px;">
+                    <canvas id="customerChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Customer -->
+    <div class="col-lg-4">
+        <div class="card section-card h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-trophy text-warning me-2"></i>Top Customer
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                {% if top_customers %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Customer</th>
+                                <th class="text-end pe-3">Total Transaksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer, value in top_customers.items %}
+                            <tr class="hover-item" data-title="Top Customer" data-desc="{{ customer }} memiliki transaksi tertinggi">
+                                <td class="ps-3">{{ customer }}</td>
+                                <td class="text-end pe-3 fw-semibold">Rp {{ value|floatformat:0 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <p class="mb-0 small">Belum ada data customer</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= TOP SALES + RINGKASAN ================= -->
+<div class="row g-4 mb-4">
+    <!-- Top Sales -->
+    <div class="col-lg-8">
+        <div class="card section-card h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-user-tie text-success me-2"></i>Top Sales
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if top_sales %}
+                    {% for sales, jumlah in top_sales.items %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2 hover-item"
+                         data-title="Top Sales" data-desc="{{ sales }} mendominasi penjualan">
+                        <span>{{ sales }}</span>
+                        <span class="badge bg-success badge-count">{{ jumlah }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-person-x"></i>
+                    <p class="mb-0 small">Belum ada data sales</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ringkasan -->
+    <div class="col-lg-4">
+        <div class="card section-card h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-chart-line text-success me-2"></i>Ringkasan Sistem
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Customer Aktif</span>
+                        <span class="fw-semibold">{{ total_customer|default:0 }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" style="width: {% if total_customer %}85{% else %}0{% endif %}%"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Dataset</span>
+                        <span class="fw-semibold">{{ total_data|default:0 }}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" style="width: {% if total_data %}90{% else %}0{% endif %}%"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>Clustering</span>
+                        <span class="fw-semibold">{{ total_cluster|default:0 }} Cluster</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-warning" style="width: {% if total_cluster %}70{% else %}0{% endif %}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= TOP PRODUK + DISTRIBUSI CLUSTER ================= -->
+<div class="row g-4 mb-4">
+    <!-- Top Produk -->
+    <div class="col-lg-6">
+        <div class="card section-card h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-box text-warning me-2"></i>Top Produk
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                {% if top_products %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Produk</th>
+                                <th class="text-end pe-3">Jumlah</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produk, jumlah in top_products.items %}
+                            <tr>
+                                <td class="ps-3">{{ produk }}</td>
+                                <td class="text-end pe-3 fw-semibold">{{ jumlah }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-box"></i>
+                    <p class="mb-0 small">Belum ada data produk</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribusi Cluster -->
+    <div class="col-lg-6">
+        <div class="card section-card h-100">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-chart-pie text-danger me-2"></i>Distribusi Cluster
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if cluster_labels and cluster_values %}
+                <div style="height: 280px;">
+                    <canvas id="clusterChart"></canvas>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-pie-chart"></i>
+                    <p class="mb-2 small">Belum ada hasil clustering</p>
+                    <a href="{% url 'run_clustering' %}" class="btn btn-sm btn-outline-primary">
+                        Jalankan Clustering
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CUSTOM POPUP ================= -->
+<div id="customPopup" class="custom-popup">
+    <h6 id="popupTitle" class="mb-1 text-primary fw-bold"></h6>
+    <p id="popupValue" class="mb-1 fw-bold fs-5"></p>
+    <small id="popupDetail" class="text-muted"></small>
+</div>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Popup
+    const popup = document.getElementById('customPopup');
+
+    function showPopup(e, title, value, detail) {
+        document.getElementById('popupTitle').textContent = title || '';
+        document.getElementById('popupValue').textContent = value || '';
+        document.getElementById('popupDetail').textContent = detail || '';
+        popup.style.display = 'block';
+        popup.style.left = (e.pageX + 15) + 'px';
+        popup.style.top = (e.pageY - 10) + 'px';
+    }
+
+    function hidePopup() {
+        popup.style.display = 'none';
+    }
+
+    document.querySelectorAll('.kpi-card, .hover-item').forEach(el => {
+        el.addEventListener('mousemove', e => {
+            showPopup(e, el.dataset.title, el.dataset.value || '', el.dataset.desc);
+        });
+        el.addEventListener('mouseleave', hidePopup);
+    });
+
+    // Chart Statistik Customer
+    const customerChartEl = document.getElementById('customerChart');
+    if (customerChartEl) {
+        new Chart(customerChartEl, {
+            type: 'bar',
+            data: {
+                labels: ['Customer', 'Produk', 'Cluster'],
+                datasets: [{
+                    label: 'Jumlah',
+                    data: [
+                        {{ total_customer|default:0 }},
+                        {{ total_produk|default:0 }},
+                        {{ total_cluster|default:0 }}
+                    ],
+                    backgroundColor: ['#2563eb', '#f59e0b', '#dc2626'],
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // Chart Distribusi Cluster
+    const clusterChartEl = document.getElementById('clusterChart');
+    if (clusterChartEl) {
+        const labels = {% if cluster_labels %}{{ cluster_labels|safe }}{% else %}[]{% endif %};
+        const values = {% if cluster_values %}{{ cluster_values|safe }}{% else %}[]{% endif %};
+
+        if (labels.length && values.length) {
+            new Chart(clusterChartEl, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#16a34a', '#f59e0b', '#dc2626',
+                            '#2563eb', '#8b5cf6', '#0ea5e9',
+                            '#ec4899', '#14b8a6'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 16,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Counter Animation
+    document.querySelectorAll('.counter').forEach(el => {
+        const target = parseInt(el.innerText.replace(/\D/g, '')) || 0;
+        if (target === 0) return;
+
+        let count = 0;
+        const step = Math.max(1, Math.ceil(target / 30));
+        const interval = setInterval(() => {
+            count += step;
+            if (count >= target) {
+                el.innerText = target;
+                clearInterval(interval);
+            } else {
+                el.innerText = count;
+            }
+        }, 25);
+    });
+});
+</script>

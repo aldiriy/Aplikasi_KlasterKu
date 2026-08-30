@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-4">
+                        <i class="fas fa-user-plus text-primary me-2"></i>
+                        Tambah Customer
+                    </h4>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Nama Customer *</label>
+                                <input type="text" name="nama_customer" class="form-control" required
+                                       placeholder="Contoh: PT Maju Jaya">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Area</label>
+                                <input type="text" name="area" class="form-control"
+                                       placeholder="Contoh: Jakarta, Surabaya">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">No. Telepon</label>
+                                <input type="text" name="no_telp" class="form-control"
+                                       placeholder="08xxxxxxxxxx">
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control"
+                                       placeholder="email@perusahaan.com">
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label">Alamat</label>
+                                <textarea name="alamat" class="form-control" rows="3"
+                                          placeholder="Alamat lengkap perusahaan"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                <i class="fas fa-save me-1"></i> Simpan
+                            </button>
+                            <a href="{% url 'master_customer' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                                Batal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">History Clustering</h4>
+        <p class="text-muted small mb-0">Daftar seluruh proses clustering yang pernah dijalankan</p>
+    </div>
+    <a href="{% url 'run_clustering' %}" class="btn btn-primary">
+        <i class="fas fa-play me-1"></i> Jalankan Clustering Baru
+    </a>
+</div>
+
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Cari ID / catatan...">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Semua Status</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Selesai</option>
+                    <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>Sedang Diproses</option>
+                    <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Gagal</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Menunggu</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">ID</th>
+                        <th>Tanggal</th>
+                        <th>Data</th>
+                        <th>Cluster</th>
+                        <th>Status</th>
+                        <th>Durasi</th>
+                        <th class="text-end pe-3">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in histories %}
+                    <tr>
+                        <td class="ps-3 fw-semibold">#{{ h.id }}</td>
+                        <td>{{ h.created_at|date:"d M Y H:i" }}</td>
+                        <td>{{ h.total_data }}</td>
+                        <td>{{ h.n_clusters }}</td>
+                        <td>
+                            {% if h.status == 'completed' %}
+                                <span class="badge bg-success">Selesai</span>
+                            {% elif h.status == 'processing' %}
+                                <span class="badge bg-primary">Proses</span>
+                            {% elif h.status == 'failed' %}
+                                <span class="badge bg-danger">Gagal</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Menunggu</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ h.duration }}</td>
+                        <td class="text-end pe-3">
+                            {% if h.status == 'completed' %}
+                                <a href="{% url 'clustering_detail' h.id %}" class="btn btn-sm btn-outline-primary">Detail</a>
+                                <a href="{% url 'export_clustering_excel' h.id %}" class="btn btn-sm btn-outline-success">Excel</a>
+                            {% elif h.status == 'failed' %}
+                                <span class="text-danger small">{{ h.error_message|truncatechars:40 }}</span>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            Belum ada history clustering
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

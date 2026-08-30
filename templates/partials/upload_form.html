@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-7">
+
+            <div class="card shadow-lg border-0 rounded-4">
+
+                <div class="card-header text-center text-white py-5"
+                     style="background:linear-gradient(135deg,#2563eb,#1d4ed8);">
+
+                    <i class="fas fa-cloud-upload-alt fa-4x mb-3"></i>
+
+                    <h2 class="fw-bold mb-2">
+                        Upload Dataset
+                    </h2>
+
+                    <p class="mb-0">
+                        Siapkan dataset untuk proses clustering
+                    </p>
+
+                </div>
+
+                <div class="card-body p-5">
+
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST"
+                          enctype="multipart/form-data"
+                          id="uploadForm">
+
+                        {% csrf_token %}
+
+                        <input
+                            type="file"
+                            id="fileInput"
+                            name="file"
+                            accept=".csv,.xlsx"
+                            style="display:none;">
+
+                        <label for="fileInput"
+                               id="uploadArea"
+                               class="border border-2 border-primary rounded-4 p-5 w-100 text-center"
+                               style="cursor:pointer;transition:.3s;">
+
+                            <i id="uploadIcon"
+                               class="fas fa-file-upload fa-4x text-primary mb-3"></i>
+
+                            <h4 class="fw-bold">
+                                Klik untuk memilih file
+                            </h4>
+
+                            <p class="text-muted mb-0">
+                                CSV atau Excel (.csv, .xlsx)
+                            </p>
+
+                            <div id="fileName"
+                                 class="mt-3 fw-bold text-success">
+                            </div>
+
+                        </label>
+
+                        <div class="alert alert-info mt-4">
+
+                            <i class="fas fa-circle-info"></i>
+
+                            Dataset minimal mempunyai kolom:
+
+                            <strong>
+
+                                Qty
+
+                            </strong>
+
+                            dan
+
+                            <strong>
+
+                                Total Harga
+
+                            </strong>
+
+                        </div>
+
+                        <button
+                            id="uploadBtn"
+                            type="submit"
+                            class="btn btn-primary btn-lg w-100"
+                            disabled>
+
+                            <i class="fas fa-upload me-2"></i>
+
+                            Upload & Proses Dataset
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+                <div class="card-footer text-center">
+
+                    <a href="{% url 'dashboard' %}"
+                       class="btn btn-outline-secondary">
+
+                        <i class="fas fa-arrow-left"></i>
+
+                        Kembali ke Dashboard
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+const fileInput=document.getElementById("fileInput");
+
+const uploadBtn=document.getElementById("uploadBtn");
+
+const fileName=document.getElementById("fileName");
+
+const uploadArea=document.getElementById("uploadArea");
+
+const uploadIcon=document.getElementById("uploadIcon");
+
+fileInput.addEventListener("change",function(){
+
+    if(this.files.length>0){
+
+        fileName.innerHTML=this.files[0].name;
+
+        uploadBtn.disabled=false;
+
+        uploadArea.classList.remove("border-primary");
+
+        uploadArea.classList.add("border-success");
+
+        uploadIcon.classList.remove("text-primary");
+
+        uploadIcon.classList.add("text-success");
+
+    }
+
+});
+
+uploadArea.addEventListener("dragover",function(e){
+
+    e.preventDefault();
+
+    uploadArea.classList.add("bg-light");
+
+});
+
+uploadArea.addEventListener("dragleave",function(){
+
+    uploadArea.classList.remove("bg-light");
+
+});
+
+uploadArea.addEventListener("drop",function(e){
+
+    e.preventDefault();
+
+    uploadArea.classList.remove("bg-light");
+
+    fileInput.files=e.dataTransfer.files;
+
+    const event=new Event("change");
+
+    fileInput.dispatchEvent(event);
+
+});
+
+document.getElementById("uploadForm").addEventListener("submit",function(e){
+
+    if(fileInput.files.length==0){
+
+        e.preventDefault();
+
+        Swal.fire({
+
+            icon:"warning",
+
+            title:"File belum dipilih",
+
+            text:"Silakan pilih dataset terlebih dahulu."
+
+        });
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

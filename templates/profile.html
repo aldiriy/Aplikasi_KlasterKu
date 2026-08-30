@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-lg-9">
+
+        <div class="card shadow-lg border-0">
+
+            <div class="card-header bg-primary text-white">
+
+                <h3 class="mb-0">
+                    <i class="fas fa-user-circle"></i>
+                    Profil Saya
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <form method="POST"
+                      enctype="multipart/form-data">
+
+                    {% csrf_token %}
+
+                    <div class="row">
+
+                        <!-- FOTO -->
+                        <div class="col-md-4 text-center">
+
+                            {% if request.user.foto_profil %}
+
+                                <img src="{{ request.user.foto_profil.url }}"
+                                     class="rounded-circle border shadow mb-3"
+                                     width="180"
+                                     height="180"
+                                     style="object-fit:cover;">
+
+                            {% else %}
+
+                                <img src="{% static 'images/default.jpg' %}"
+                                     class="rounded-circle border shadow mb-3"
+                                     width="180"
+                                     height="180">
+
+                            {% endif %}
+
+                            <label class="form-label fw-bold">
+
+                                Ganti Foto Profil
+
+                            </label>
+
+                            {{ form.foto_profil }}
+
+                        </div>
+
+                        <!-- BIODATA -->
+                        <div class="col-md-8">
+
+                            <div class="mb-3">
+
+                                <label>Nama Lengkap</label>
+
+                                {{ form.first_name }}
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label>Email</label>
+
+                                {{ form.email }}
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label>No HP</label>
+
+                                {{ form.no_hp }}
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label>Jabatan</label>
+
+                                {{ form.jabatan }}
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label>Alamat</label>
+
+                                {{ form.alamat }}
+
+                            </div>
+
+                            <button class="btn btn-primary btn-lg">
+
+                                <i class="fas fa-save"></i>
+
+                                Simpan Perubahan
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

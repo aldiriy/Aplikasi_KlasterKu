@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-4">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>
+                        Tambah Barang Baru
+                    </h4>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Kode Barang <span class="text-danger">*</span></label>
+                                <input type="text" name="kode_barang" class="form-control" required
+                                       placeholder="Contoh: RESHINE-100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nama Barang <span class="text-danger">*</span></label>
+                                <input type="text" name="nama_barang" class="form-control" required
+                                       placeholder="Harus mirip dengan kolom Produk di Excel">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kategori</label>
+                                <select name="kategori" class="form-select">
+                                    <option value="">-- Pilih Kategori --</option>
+                                    {% for k in kategoris %}
+                                    <option value="{{ k.pk }}">{{ k.nama }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Satuan</label>
+                                <input type="text" name="satuan" class="form-control" value="Kg"
+                                       placeholder="Kg / pcs / liter">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Metode Stok</label>
+                                <select name="metode" class="form-select">
+                                    <option value="FIFO">FIFO (First In First Out)</option>
+                                    <option value="LIFO">LIFO (Last In First Out)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Qty Masuk Awal</label>
+                                <input type="number" name="qty_masuk" class="form-control" step="0.01" min="0" value="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Masuk</label>
+                                <input type="date" name="tanggal_masuk" class="form-control" value="{{ today }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Keterangan</label>
+                                <input type="text" name="keterangan" class="form-control" value="Stok awal">
+                            </div>
+                        </div>
+
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                <i class="fas fa-save me-1"></i> Simpan
+                            </button>
+                            <a href="{% url 'master_barang' %}" class="btn btn-outline-secondary rounded-pill px-4">Batal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

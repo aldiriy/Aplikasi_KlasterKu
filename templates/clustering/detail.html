@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Detail Clustering #{{ history.id }}</h4>
+        <p class="text-muted small mb-0">
+            {{ history.created_at|date:"d M Y H:i" }} · {{ history.algorithm }} · 
+            {% if history.status == 'completed' %}
+                <span class="text-success">Selesai</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_clustering_excel' history.id %}" class="btn btn-success">
+            <i class="fas fa-file-excel me-1"></i> Export Excel
+        </a>
+        <a href="{% url 'clustering_history' %}" class="btn btn-outline-secondary">Kembali</a>
+    </div>
+</div>
+
+<!-- Info -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Total Data</div>
+                <h4 class="fw-bold mb-0">{{ history.total_data }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Jumlah Cluster</div>
+                <h4 class="fw-bold mb-0">{{ history.n_clusters }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Silhouette Score</div>
+                <h4 class="fw-bold mb-0">
+                    {% if history.silhouette_score %}{{ history.silhouette_score|floatformat:4 }}{% else %}-{% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Durasi</div>
+                <h4 class="fw-bold mb-0">{{ history.duration }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daftar Cluster -->
+<div class="row g-4">
+    {% for cluster in clusters %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge text-white" style="background: {{ cluster.color }};">
+                            Cluster {{ cluster.cluster_label }}
+                        </span>
+                        <h5 class="fw-bold mt-2 mb-0">{{ cluster.label_name }}</h5>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold fs-4">{{ cluster.member_count }}</div>
+                        <small class="text-muted">customer</small>
+                    </div>
+                </div>
+
+                <div class="small text-muted mb-2">
+                    <div>Avg Monetary: <strong>Rp {{ cluster.avg_monetary|floatformat:0 }}</strong></div>
+                    <div>Avg Frequency: <strong>{{ cluster.avg_frequency|floatformat:1 }}</strong></div>
+                    <div>Avg Recency: <strong>{{ cluster.avg_recency|floatformat:0 }} hari</strong></div>
+                </div>
+
+                <div class="alert alert-light border mt-3 mb-3 py-2 small">
+                    <strong>Rekomendasi:</strong><br>
+                    {{ cluster.recommendation }}
+                </div>
+
+                <a href="{% url 'cluster_members' history.id cluster.cluster_label %}" 
+                   class="btn btn-sm btn-outline-primary w-100">
+                    Lihat Member
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-warning">Belum ada detail cluster.</div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

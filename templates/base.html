@@ -1,0 +1,573 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KlasterKu | PT Sinar Multi Kemindo</title>
+    
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Fontawesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+    :root{
+        --sidebar:#123458;
+        --sidebar-hover:#1f4f80;
+        --primary:#2563eb;
+        --success:#16a34a;
+        --warning:#f59e0b;
+        --danger:#dc2626;
+        --info:#0ea5e9;
+        --body:#f5f7fb;
+        --card:#ffffff;
+        --text:#334155;
+    }
+
+    body{
+        background:var(--body);
+        font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;
+        overflow-x:hidden;
+    }
+
+    .sidebar{
+        position:fixed;
+        left:0;
+        top:0;
+        width:270px;
+        height:100vh;
+        background:linear-gradient(180deg,#123458,#0d2740);
+        color:white;
+        z-index:1000;
+        overflow-y:auto;
+        transition:.3s;
+        box-shadow:0 0 20px rgba(0,0,0,.2);
+    }
+
+    .sidebar-header{
+        padding:30px 20px;
+        text-align:center;
+        border-bottom:1px solid rgba(255,255,255,.1);
+    }
+
+    .sidebar-header img{
+        width:80px;
+        height:80px;
+        border-radius:50%;
+        background:white;
+        padding:8px;
+        box-shadow:0 5px 15px rgba(0,0,0,.3);
+    }
+
+    .sidebar ul{
+        padding:15px;
+        list-style:none;
+    }
+
+    .sidebar ul li{
+        margin-bottom:8px;
+    }
+
+    .sidebar ul li a{
+        display:block;
+        padding:13px 18px;
+        border-radius:12px;
+        text-decoration:none;
+        color:white;
+        transition:.3s;
+        font-size:15px;
+    }
+
+    .sidebar ul li a:hover{
+        background:rgba(255,255,255,.15);
+        padding-left:24px;
+    }
+
+    .sidebar ul li a.active{
+        background:#0ea5e9;
+    }
+
+    .main{
+        margin-left:270px;
+        min-height:100vh;
+    }
+
+    .topbar{
+        background:white;
+        padding:18px 30px;
+        box-shadow:0 3px 12px rgba(0,0,0,.05);
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        position:sticky;
+        top:0;
+        z-index:900;
+    }
+
+    .card{
+        border:none;
+        border-radius:18px;
+        box-shadow:0 10px 20px rgba(0,0,0,.06);
+        transition:.3s;
+    }
+
+    .card:hover{
+        transform:translateY(-5px);
+    }
+
+    .btn{
+        border-radius:12px;
+        transition: all 0.3s;
+    }
+
+    ::-webkit-scrollbar{
+        width:8px;
+    }
+
+    ::-webkit-scrollbar-thumb{
+        background:#0ea5e9;
+        border-radius:20px;
+    }
+
+    @media(max-width:991px){
+        .sidebar{ left:-270px; }
+        .sidebar.show{ left:0; }
+        .main{ margin-left:0; }
+    }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <img src="{% static 'images/klasterku.png' %}">
+        <h4>KLASTERKU</h4>
+        <p>Customer Segmentation System</p>
+    </div>
+
+    <ul>
+{% if request.user.is_profile_complete %}
+<li>
+    <a href="{% url 'dashboard' %}">
+        <i class="bi bi-grid-fill"></i> Dashboard
+    </a>
+</li>
+{% else %}
+<li>
+    <a href="#" class="locked-menu">
+        <i class="bi bi-grid-fill"></i> Dashboard
+        <i class="fas fa-lock text-warning float-end"></i>
+    </a>
+</li>
+{% endif %}        
+
+{% if request.user.is_profile_complete %}
+<li>
+    <a href="{% url 'upload_data' %}">
+        <i class="bi bi-upload"></i> Upload Dataset
+    </a>
+</li>
+{% else %}
+<li>
+    <a href="#" class="locked-menu">
+        <i class="bi bi-upload"></i> Upload Dataset
+        <i class="fas fa-lock text-warning float-end"></i>
+    </a>
+</li>
+{% endif %}
+
+{% if request.user.is_profile_complete %}
+<li>
+    <a href="{% url 'run_clustering' %}">
+        <i class="bi bi-cpu-fill"></i> Proses Clustering
+    </a>
+</li>
+{% else %}
+<li>
+    <a href="#" class="locked-menu">
+        <i class="bi bi-cpu-fill"></i> Proses Clustering
+        <i class="fas fa-lock text-warning float-end"></i>
+    </a>
+</li>
+{% endif %}        
+
+{% if request.user.is_profile_complete %}
+<li>
+    <a href="{% url 'clustering_result' %}">
+        <i class="bi bi-diagram-3-fill"></i> Hasil Clustering
+    </a>
+</li>
+{% else %}
+<li>
+    <a href="#" class="locked-menu">
+        <i class="bi bi-diagram-3-fill"></i> Hasil Clustering
+        <i class="fas fa-lock text-warning float-end"></i>
+    </a>
+</li>
+
+{% endif %}        
+
+{% if request.user.is_profile_complete %}
+<li>
+    <a href="{% url 'clustering_history' %}">
+        <i class="bi bi-clock-history"></i> History Clustering
+    </a>
+</li>
+{% else %}
+<li>
+    <a href="#" class="locked-menu">
+        <i class="bi bi-clock-history"></i> History Clustering
+        <i class="fas fa-lock text-warning float-end"></i>
+    </a>
+</li>
+{% endif %}
+
+{% if request.user.is_profile_complete %}
+<li>
+    <a href="{% url 'download_report' %}">
+        <i class="bi bi-file-earmark-pdf-fill"></i> Laporan
+    </a>
+</li>
+{% else %}
+<li>
+    <a href="#" class="locked-menu">
+        <i class="bi bi-file-earmark-pdf-fill"></i> Laporan
+        <i class="fas fa-lock text-warning float-end"></i>
+    </a>
+</li>
+{% endif %}        
+
+        <hr>
+        <li><a href="{% url 'master_customer' %}"><i class="bi bi-people-fill"></i> Master Customer</a></li>        
+        <li><a href="{% url 'master_barang' %}"><i class="bi bi-box-seam-fill"></i> Master Barang</a></li>
+        <li><a href="{% url 'master_label' %}"><i class="bi bi-tags-fill"></i> Master Label</a></li>
+        <li><a href="{% url 'master_kemasan' %}"><i class="bi bi-archive-fill"></i> Master Kemasan</a></li>
+        <hr>
+        <li><a href="{% url 'change_password' %}"><i class="bi bi-key-fill"></i> Ganti Password</a></li>
+        <li><a href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+    </ul>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+
+        <!-- SAPAAN -->
+        <div class="top-left">
+
+            <h3 id="greeting" class="fw-bold mb-1">
+                Selamat Datang 👋
+            </h3>
+
+            <small class="text-muted" id="greetingText">
+                Semoga aktivitas Anda menyenangkan hari ini.
+            </small>
+
+        </div>
+
+        <!-- JAM + USER -->
+        <div class="top-right d-flex align-items-center gap-4">
+
+            <div class="text-end">
+                <div id="clock" class="fw-semibold"></div>
+            </div>
+
+            {% if request.user.is_authenticated %}
+
+            <div class="dropdown">
+
+                <a href="#"
+                   class="d-flex align-items-center text-decoration-none"
+                   data-bs-toggle="dropdown"
+                   aria-expanded="false">
+
+                    {% if request.user.foto_profil %}
+
+                        <img src="{{ request.user.foto_profil.url }}"
+                             width="48"
+                             height="48"
+                             class="rounded-circle border border-3 border-primary object-fit-cover">
+
+                    {% else %}
+
+                        <img src="{% static 'images/default.jpg' %}"
+                             width="48"
+                             height="48"
+                             class="rounded-circle border border-3 border-primary">
+
+                    {% endif %}
+
+                    <div class="ms-2 text-start">
+
+                        <strong>
+
+                            {% if request.user.get_full_name %}
+                            {{ request.user.get_full_name }}
+                            {% else %}
+                            {{ request.user.username }}
+                                {% endif %}
+
+                        </strong>
+
+                        <br>
+
+                        <small class="text-muted">
+                            Administrator
+                        </small>
+
+                    </div>
+
+                </a>
+
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+
+                    <li>
+
+                        <a class="dropdown-item"
+                           href="{% url 'profile' %}">
+
+                            <i class="fas fa-user me-2"></i>
+
+                            Profil Saya
+
+                        </a>
+
+                    </li>
+
+                    <li>
+
+                        <a class="dropdown-item"
+                           href="{% url 'change_password' %}">
+
+                            <i class="fas fa-key me-2"></i>
+
+                            Ganti Password
+
+                        </a>
+
+                    </li>
+
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+
+                    <li>
+
+                        <a class="dropdown-item text-danger"
+                           href="{% url 'logout' %}">
+
+                            <i class="fas fa-sign-out-alt me-2"></i>
+
+                            Logout
+
+                        </a>
+
+                    </li>
+
+                </ul>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="container-fluid p-4">
+
+        {% if request.user.is_authenticated and not request.user.is_profile_complete %}
+
+<div class="alert alert-warning border-0 shadow-lg mb-4">
+
+    <h4>
+        <i class="fas fa-exclamation-triangle"></i>
+        Profil Belum Lengkap
+    </h4>
+
+    <p class="mb-3">
+        Selamat datang
+        <strong>{{ request.user.first_name|default:request.user.username }}</strong>.
+        Sebelum menggunakan seluruh fitur KlasterKu,
+        Anda wajib melengkapi data diri terlebih dahulu.
+    </p>
+
+    <a href="{% url 'profile' %}" class="btn btn-warning">
+
+        <i class="fas fa-user-edit"></i>
+
+        Lengkapi Profil
+
+    </a>
+
+</div>
+
+{% endif %}
+        {% block content %}
+
+        {% endblock %}
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-top py-3 mt-auto">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        © 2026 <strong>KlasterKu</strong> | Customer Segmentation System | PT Sinar Multi Kemindo
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">Developed by Muhammad Riyaldi</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<!-- MOBILE BUTTON -->
+<button class="btn btn-primary d-lg-none position-fixed" id="toggleSidebar"
+        style="bottom:20px; left:20px; z-index:1200; border-radius:50%; width:55px; height:55px;">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Sidebar Toggle
+const sidebar = document.getElementById("sidebar");
+const toggle = document.getElementById("toggleSidebar");
+if(toggle){
+    toggle.addEventListener("click", () => sidebar.classList.toggle("show"));
+}
+
+// Clock
+function updateClock(){
+    const now = new Date();
+    const options = {weekday:'long', day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'};
+    const jam = document.getElementById("clock");
+    if(jam) jam.innerHTML = now.toLocaleDateString('id-ID', options);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function updateGreeting(){
+
+    const hour = new Date().getHours();
+
+    let salam = "";
+    let pesan = "";
+
+    if(hour >= 4 && hour < 10){
+
+        salam = "☀️ Selamat Pagi";
+
+        pesan = "Semoga pekerjaan Anda hari ini berjalan lancar.";
+
+    }
+
+    else if(hour >= 10 && hour < 15){
+
+        salam = "🌤️ Selamat Siang";
+
+        pesan = "Semoga aktivitas Anda menyenangkan hari ini.";
+
+    }
+
+    else if(hour >= 15 && hour < 18){
+
+        salam = "🌇 Selamat Sore";
+
+        pesan = "Semoga hari Anda tetap produktif.";
+
+    }
+
+    else{
+
+        salam = "🌙 Selamat Malam";
+
+        pesan = "Terima kasih telah menggunakan KlasterKu.";
+
+    }
+
+    const nama = "{% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}{{ request.user.username }}{% endif %}";
+
+    document.getElementById("greeting").innerHTML =
+
+        salam + ", " + nama + " 👋";
+
+    document.getElementById("greetingText").innerHTML = pesan;
+
+}
+
+updateGreeting();
+
+// Active Menu
+document.addEventListener("DOMContentLoaded", function(){
+    let current = window.location.pathname;
+    document.querySelectorAll(".sidebar a").forEach(item => {
+        if(item.getAttribute("href") === current){
+            item.classList.add("active");
+        }
+    });
+});
+</script>
+
+<!-- Messages -->
+{% if messages %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    {% for message in messages %}
+    Swal.fire({
+        icon: "{{ message.tags|default:'info'|escapejs }}",
+        title: "{{ message|escapejs }}",
+        timer: 2500,
+        showConfirmButton: false
+    });
+    {% endfor %}
+});
+</script>
+{% endif %}
+
+<script>
+document.querySelectorAll(".locked-menu").forEach(function(menu){
+
+    menu.addEventListener("click", function(e){
+
+        e.preventDefault();
+
+        Swal.fire({
+            icon: "warning",
+            title: "Profil Belum Lengkap",
+            html: `
+                <p>Silakan lengkapi data diri terlebih dahulu.</p>
+                <small>Setelah profil lengkap, seluruh menu akan terbuka.</small>
+            `,
+            confirmButtonText: "Lengkapi Profil"
+        }).then((result)=>{
+
+            if(result.isConfirmed){
+                window.location.href = "{% url 'profile' %}";
+            }
+
+        });
+
+    });
+
+});
+</script>
+
+</body>
+</html>

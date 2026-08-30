@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="fas fa-users text-primary me-2"></i>
+                Master Customer
+            </h3>
+            <p class="text-muted mb-0">Kelola data perusahaan / customer</p>
+        </div>
+        <a href="{% url 'tambah_customer' %}" class="btn btn-primary rounded-pill px-4">
+            <i class="fas fa-plus me-2"></i>Tambah Customer
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Customer</th>
+                            <th>Area</th>
+                            <th>No. Telepon</th>
+                            <th>Email</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in customers %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td class="fw-semibold">{{ c.nama_customer }}</td>
+                            <td>{{ c.area|default:"-" }}</td>
+                            <td>{{ c.no_telp|default:"-" }}</td>
+                            <td>{{ c.email|default:"-" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'edit_customer' c.pk %}" class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'hapus_customer' c.pk %}" class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Yakin ingin menghapus customer ini?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                Belum ada data customer
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

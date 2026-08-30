@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-1">Upload Stok Opname</h4>
+                    <p class="text-muted mb-4">
+                        Upload file Excel berisi data stok gudang. 
+                        Format yang disarankan: <code>Kode Barang | Nama Barang | Qty | Satuan | Tanggal Masuk | Metode</code>
+                    </p>
+
+                    <div class="alert alert-info">
+                        <strong>Catatan:</strong>
+                        <ul class="mb-0">
+                            <li>Jika kode barang sudah ada → stok akan <strong>ditambahkan</strong> (batch baru)</li>
+                            <li>Jika kode barang belum ada → barang baru akan dibuat</li>
+                            <li>File yang didukung: .xlsx, .xls, .csv</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Pilih File Excel</label>
+                            <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success rounded-pill px-4">
+                                <i class="fas fa-upload me-1"></i> Upload & Proses
+                            </button>
+                            <a href="{% url 'master_barang' %}" class="btn btn-outline-secondary rounded-pill px-4">Batal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

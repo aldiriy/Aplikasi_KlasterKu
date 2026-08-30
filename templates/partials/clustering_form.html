@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Jalankan Clustering - KlasterKu{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <!-- Header -->
+                <div class="card-header border-0 text-white text-center py-5"
+                     style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);">
+                    <div class="mb-3">
+                        <i class="fas fa-project-diagram fa-3x opacity-90"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Jalankan Clustering</h3>
+                    <p class="mb-0 opacity-90">K-Means Customer Segmentation</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+
+                    {% if error %}
+                    <div class="alert alert-danger alert-dismissible fade show rounded-3 border-0 shadow-sm" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle me-3 fa-lg"></i>
+                            <div>
+                                <strong>Terjadi Kesalahan</strong><br>
+                                <small>{{ error }}</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" id="clusteringForm">
+                        {% csrf_token %}
+
+                        <!-- Jumlah Cluster -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold text-secondary">
+                                <i class="fas fa-layer-group me-2 text-primary"></i>Jumlah Cluster (K)
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-hashtag text-muted"></i>
+                                </span>
+                                <input type="number" 
+                                       name="n_clusters" 
+                                       class="form-control border-start-0 text-center fw-bold fs-3" 
+                                       value="3" 
+                                       min="2" 
+                                       max="10" 
+                                       required>
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle me-1"></i>Rekomendasi: 3 – 5 cluster
+                            </div>
+                        </div>
+
+                        <!-- Algoritma -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold text-secondary">
+                                <i class="fas fa-cogs me-2 text-primary"></i>Algoritma
+                            </label>
+                            <select name="algorithm" class="form-select form-select-lg">
+                                <option value="kmeans" selected>K-Means (Rekomendasi)</option>
+                                <option value="kmeans++">K-Means++</option>
+                            </select>
+                        </div>
+
+                        <!-- Tips -->
+                        <div class="alert border-0 rounded-3 mb-4" style="background: #eff6ff;">
+                            <div class="d-flex">
+                                <i class="fas fa-lightbulb text-primary mt-1 me-3"></i>
+                                <div>
+                                    <strong class="text-primary">Tips</strong>
+                                    <p class="mb-0 small text-muted">
+                                        Mulai dengan 3 cluster terlebih dahulu. Setelah hasil keluar, 
+                                        Anda bisa mencoba nilai K yang berbeda untuk mendapatkan segmentasi terbaik.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tombol -->
+                        <button type="submit" id="clusterBtn" 
+                                class="btn btn-primary btn-lg w-100 py-3 fw-bold rounded-3 shadow-sm">
+                            <i class="fas fa-play-circle me-2"></i>
+                            JALANKAN CLUSTERING SEKARANG
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card-footer bg-light border-0 py-4 text-center">
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('clusteringForm').addEventListener('submit', function() {
+    const btn = document.getElementById('clusterBtn');
+    btn.disabled = true;
+    btn.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Menjalankan clustering...
+    `;
+    
+    // SweetAlert loading (jika ada fungsi loading())
+    if (typeof loading === 'function') {
+        loading();
+    }
+});
+</script>
+{% endblock %}

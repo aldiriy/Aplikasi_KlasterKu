@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Edit Barang</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Kode Barang</label>
+                            <input type="text" name="kode_barang" class="form-control" value="{{ barang.kode_barang }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nama Barang</label>
+                            <input type="text" name="nama_barang" class="form-control" value="{{ barang.nama_barang }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Satuan</label>
+                            <input type="text" name="satuan" class="form-control" value="{{ barang.satuan }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Metode</label>
+                            <select name="metode" class="form-select">
+                                <option value="FIFO" {% if barang.metode == 'FIFO' %}selected{% endif %}>FIFO</option>
+                                <option value="LIFO" {% if barang.metode == 'LIFO' %}selected{% endif %}>LIFO</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">Simpan</button>
+                            <a href="{% url 'master_barang' %}" class="btn btn-outline-secondary rounded-pill px-4">Batal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

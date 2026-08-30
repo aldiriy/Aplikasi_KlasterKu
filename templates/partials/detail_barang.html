@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">{{ barang.nama_barang }}</h4>
+            <p class="text-muted mb-0"><code>{{ barang.kode_barang }}</code> • Stok: <strong>{{ barang.stok_total }} {{ barang.satuan }}</strong></p>
+        </div>
+        <a href="{% url 'master_barang' %}" class="btn btn-outline-secondary rounded-pill px-4">Kembali</a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h6 class="fw-bold mb-3">Riwayat Batch</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Masuk</th>
+                            <th>Keluar</th>
+                            <th>Sisa</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in batches %}
+                        <tr>
+                            <td>{{ b.tanggal_masuk }}</td>
+                            <td>{{ b.qty_masuk }}</td>
+                            <td>{{ b.qty_keluar }}</td>
+                            <td>{{ b.sisa }}</td>
+                            <td>{{ b.keterangan|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted">Belum ada batch</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

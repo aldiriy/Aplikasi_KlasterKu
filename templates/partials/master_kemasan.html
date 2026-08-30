@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="fas fa-box text-primary me-2"></i>
+                Master Kemasan
+            </h3>
+            <p class="text-muted mb-0">Kelola stok Kemasan (FIFO / LIFO)</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'upload_kemasan' %}" class="btn btn-success rounded-pill px-4">
+                <i class="fas fa-file-excel me-2"></i>Upload Excel
+            </a>
+            <a href="{% url 'tambah_kemasan' %}" class="btn btn-primary rounded-pill px-4">
+                <i class="fas fa-plus me-2"></i>Tambah Kemasan
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No</th>
+                            <th>Kode</th>
+                            <th>Nama Kemasan</th>
+                            <th>Kapasitas</th>
+                            <th>Satuan</th>
+                            <th>Metode</th>
+                            <th class="text-end">Stok</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in kemasans %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><code>{{ l.kode_kemasan }}</code></td>
+                            <td class="fw-semibold">{{ l.nama_kemasan }}</td>
+                            <td>{{ l.kapasitas|default:"-" }}</td>
+                            <td>{{ l.satuan }}</td>
+                            <td>
+                                <span class="badge {% if l.metode == 'FIFO' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {{ l.metode }}
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold {% if l.stok_total <= 0 %}text-danger{% endif %}">
+                                {{ l.stok_total }}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'detail_kemasan' l.pk %}" class="btn btn-sm btn-outline-info me-1"><i class="fas fa-eye"></i></a>
+                                <a href="{% url 'kemasan_masuk' l.pk %}" class="btn btn-sm btn-outline-success me-1"><i class="fas fa-plus"></i></a>
+                                <a href="{% url 'edit_kemasan' l.pk %}" class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></a>
+                                <a href="{% url 'hapus_kemasan' l.pk %}" class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Yakin hapus kemasan ini?')"><i class="fas fa-trash"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">Belum ada data kemasan</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
