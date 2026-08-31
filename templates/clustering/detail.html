@@ -21,7 +21,7 @@
 
 <!-- Info -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <div class="text-muted small">Total Data</div>
@@ -29,7 +29,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <div class="text-muted small">Jumlah Cluster</div>
@@ -37,7 +37,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <div class="text-muted small">Silhouette Score</div>
@@ -47,7 +47,27 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Davies-Bouldin (DBI)</div>
+                <h4 class="fw-bold mb-0">
+                    {% if dbi_score %}{{ dbi_score|floatformat:4 }}{% else %}-{% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Saran k (Elbow)</div>
+                <h4 class="fw-bold mb-0">
+                    {% if optimal_k %}{{ optimal_k }}{% else %}-{% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
         <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <div class="text-muted small">Durasi</div>
@@ -77,10 +97,17 @@
                 </div>
 
                 <div class="small text-muted mb-2">
-                    <div>Avg Monetary: <strong>Rp {{ cluster.avg_monetary|floatformat:0 }}</strong></div>
-                    <div>Avg Frequency: <strong>{{ cluster.avg_frequency|floatformat:1 }}</strong></div>
-                    <div>Avg Recency: <strong>{{ cluster.avg_recency|floatformat:0 }} hari</strong></div>
-                </div>
+    <div>Avg Frequency: <strong>{{ cluster.avg_frequency|floatformat:1 }}</strong></div>
+    <div>Avg Qty: <strong>
+        {% if cluster.members.first.extra_data.total_qty %}
+            {{ cluster.members.first.extra_data.total_qty|floatformat:1 }}
+        {% else %}
+            -
+        {% endif %}
+    </strong></div>
+    <div>Avg Monetary: <strong>Rp {{ cluster.avg_monetary|floatformat:0 }}</strong></div>
+    <div>Avg Recency: <strong>{{ cluster.avg_recency|floatformat:0 }} hari</strong></div>
+</div>
 
                 <div class="alert alert-light border mt-3 mb-3 py-2 small">
                     <strong>Rekomendasi:</strong><br>

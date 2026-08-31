@@ -212,14 +212,14 @@ def run_clustering(request):
         })
 
     if request.method == "POST":
-        history = None  # untuk antisipasi error
+        history = None
 
         try:
             n_clusters = int(request.POST.get("n_clusters", 3))
             algorithm = request.POST.get("algorithm", "kmeans")
 
             # ============================================
-            # 0. BUAT HISTORY (status = processing)
+            # 0. BUAT HISTORY
             # ============================================
             history = ClusteringHistory.objects.create(
                 user=request.user,
@@ -262,7 +262,7 @@ def run_clustering(request):
             df["Total Harga"] = pd.to_numeric(df["Total Harga"], errors="coerce").fillna(0)
 
             # ============================================
-            # 1. PENGURANGAN STOK BARANG
+            # 1. PENGURANGAN STOK BARANG (tetap dipertahankan)
             # ============================================
             stok_warnings = []
 
@@ -295,22 +295,30 @@ def run_clustering(request):
                         stok_warnings.append(pesan)
 
             # ============================================
-            # 2. UPDATE / CREATE MASTER CUSTOMER
+            # 2. AGGREGASI SESUAI SKRIPSI
+            # Frekuensi = jumlah transaksi
+            # Total_Qty  = total pembelian (kg/ton)
+            # Total_Omzet
             # ============================================
             customer_agg = df.groupby("Customer").agg({
                 "Qty": "sum",
-                "Total Harga": "sum"
+                "Total Harga": "sum",
+                "Customer": "count"               # Frekuensi
+            }).rename(columns={
+                "Qty": "Total_Qty",
+                "Total Harga": "Total_Omzet",
+                "Customer": "Frekuensi"
             }).reset_index()
 
-            customer_agg.columns = ["Customer", "Total_Qty", "Total_Omzet"]
+            customer_agg.columns = ["Customer", "Total_Qty", "Total_Omzet", "Frekuensi"]
 
+            # Update / Create Master Customer
             for _, row in customer_agg.iterrows():
                 nama_cust = str(row["Customer"]).strip()
                 total_qty = float(row["Total_Qty"])
                 total_omzet = float(row["Total_Omzet"])
 
                 customer = Customer.objects.filter(nama_customer__iexact=nama_cust).first()
-
                 if customer is None:
                     Customer.objects.create(
                         nama_customer=nama_cust,
@@ -334,62 +342,116 @@ def run_clustering(request):
                     "error": f"Jumlah customer ({len(customer_agg)}) lebih sedikit dari jumlah cluster ({n_clusters})."
                 })
 
-            X = customer_agg[["Total_Qty", "Total_Omzet"]]
+            # Fitur sesuai skripsi
+            X = customer_agg[["Frekuensi", "Total_Qty", "Total_Omzet"]]
 
             from sklearn.preprocessing import StandardScaler
             from sklearn.cluster import KMeans
-            from sklearn.metrics import silhouette_score
+            from sklearn.metrics import silhouette_score, davies_bouldin_score
+            import numpy as np
 
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X)
 
+            # --- Elbow Method ---
+            inertias = []
+            K_range = range(2, min(8, len(customer_agg)))
+            for k in K_range:
+                km = KMeans(n_clusters=k, random_state=42, n_init=10)
+                km.fit(X_scaled)
+                inertias.append(km.inertia_)
+
+            # Saran k optimal sederhana
+            diffs = np.diff(inertias)
+            optimal_k_suggestion = list(K_range)[np.argmin(diffs) + 1] if len(diffs) > 0 else n_clusters
+
+            # Jalankan K-Means
             model = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
             customer_agg["Cluster"] = model.fit_predict(X_scaled)
 
-            silhouette = round(silhouette_score(X_scaled, customer_agg["Cluster"]), 3)
+            # Evaluasi
+            silhouette = round(silhouette_score(X_scaled, customer_agg["Cluster"]), 4)
+            dbi = round(davies_bouldin_score(X_scaled, customer_agg["Cluster"]), 4)
             centers = scaler.inverse_transform(model.cluster_centers_)
 
             # ============================================
-            # 4. SIMPAN KE DATABASE (History + Detail + Member)
+            # 4. LABEL: Tinggi / Sedang / Rendah
             # ============================================
-            from .utils.clustering_helper import (
-                assign_cluster_label,
-                get_recommendation,
-                get_cluster_color
-            )
+            from .utils.clustering_helper import get_cluster_color
 
-            # Hitung statistik per cluster dulu (untuk labeling)
-            all_stats = []
+            cluster_stats = []
             for i in range(n_clusters):
                 subset = customer_agg[customer_agg["Cluster"] == i]
-                all_stats.append({
-                    "monetary": float(subset["Total_Omzet"].mean()) if len(subset) else 0,
-                    "frequency": float(subset["Total_Qty"].mean()) if len(subset) else 0,
-                    "recency": 0,  # belum ada data recency di dataset Anda
+                avg_freq = float(subset["Frekuensi"].mean()) if len(subset) else 0
+                avg_qty = float(subset["Total_Qty"].mean()) if len(subset) else 0
+                avg_omzet = float(subset["Total_Omzet"].mean()) if len(subset) else 0
+                score = (avg_freq * 0.3) + (avg_qty * 0.4) + (avg_omzet * 0.3)
+                cluster_stats.append({
+                    "cluster_id": i,
+                    "avg_freq": avg_freq,
+                    "avg_qty": avg_qty,
+                    "avg_omzet": avg_omzet,
+                    "score": score,
+                    "member_count": len(subset)
                 })
 
+            cluster_stats_sorted = sorted(cluster_stats, key=lambda x: x["score"], reverse=True)
+
+            # Mapping label
+            label_map = {}
+            if n_clusters == 3:
+                labels = ["Tinggi", "Sedang", "Rendah"]
+            elif n_clusters == 2:
+                labels = ["Tinggi", "Rendah"]
+            else:
+                labels = [f"Cluster {i+1}" for i in range(n_clusters)]
+                labels[0] = "Tinggi"
+                if n_clusters >= 3:
+                    labels[-1] = "Rendah"
+                    labels[n_clusters // 2] = "Sedang"
+
+            for idx, stat in enumerate(cluster_stats_sorted):
+                label_map[stat["cluster_id"]] = labels[idx] if idx < len(labels) else f"Cluster {stat['cluster_id']+1}"
+
+            def get_recommendation_gudang(label):
+                rekomendasi = {
+                    "Tinggi": (
+                        "Prioritas UTAMA. Siapkan stok bahan baku lebih banyak dan pastikan ketersediaan. "
+                        "Customer ini sering membeli dan dalam jumlah besar. Jaga level stok agar tidak kosong."
+                    ),
+                    "Sedang": (
+                        "Prioritas SEDANG. Pantau stok secara berkala. Siapkan stok sesuai pola rata-rata. "
+                        "Bisa diberikan penawaran untuk meningkatkan frekuensi pembelian."
+                    ),
+                    "Rendah": (
+                        "Prioritas RENDAH. Stok disiapkan minimal. Fokus pada efisiensi gudang. "
+                        "Pertimbangkan strategi untuk meningkatkan frekuensi atau volume pembelian."
+                    ),
+                }
+                return rekomendasi.get(label, "Analisis lebih lanjut diperlukan untuk menentukan prioritas stok.")
+
+            # Simpan ke database
             for i in range(n_clusters):
                 subset = customer_agg[customer_agg["Cluster"] == i]
                 member_count = len(subset)
-                avg_monetary = float(subset["Total_Omzet"].mean()) if member_count else 0
-                avg_frequency = float(subset["Total_Qty"].mean()) if member_count else 0
-                avg_recency = 0
+                avg_freq = float(subset["Frekuensi"].mean()) if member_count else 0
+                avg_qty = float(subset["Total_Qty"].mean()) if member_count else 0
+                avg_omzet = float(subset["Total_Omzet"].mean()) if member_count else 0
 
-                label = assign_cluster_label(avg_monetary, avg_frequency, avg_recency, all_stats)
+                label = label_map.get(i, f"Cluster {i+1}")
 
                 cluster_obj = ClusterDetail.objects.create(
                     history=history,
                     cluster_label=i,
                     label_name=label,
                     member_count=member_count,
-                    avg_monetary=avg_monetary,
-                    avg_frequency=avg_frequency,
-                    avg_recency=avg_recency,
-                    recommendation=get_recommendation(label),
-                    color=get_cluster_color(label),
+                    avg_monetary=avg_omzet,
+                    avg_frequency=avg_freq,
+                    avg_recency=0,
+                    recommendation=get_recommendation_gudang(label),
+                    color=get_cluster_color(label) if label in ["Tinggi", "Sedang", "Rendah"] else "#0ea5e9",
                 )
 
-                # Simpan member
                 for _, row in subset.iterrows():
                     nama_cust = str(row["Customer"]).strip()
                     customer_obj = Customer.objects.filter(nama_customer__iexact=nama_cust).first()
@@ -400,20 +462,25 @@ def run_clustering(request):
                         customer_code=str(customer_obj.id) if customer_obj else "",
                         customer_name=nama_cust,
                         monetary=float(row["Total_Omzet"]),
-                        frequency=float(row["Total_Qty"]),
+                        frequency=float(row["Frekuensi"]),
                         recency=0,
+                        extra_data={"total_qty": float(row["Total_Qty"])}
                     )
 
-            # Update history → completed
+            # Update history
             history.status = "completed"
             history.total_data = len(customer_agg)
             history.n_clusters = n_clusters
             history.silhouette_score = silhouette
+            history.note = (
+                f"File: {os.path.basename(last_file)} | "
+                f"DBI: {dbi} | Saran k optimal (Elbow): {optimal_k_suggestion}"
+            )
             history.finished_at = timezone.now()
             history.save()
 
             # ============================================
-            # 5. TETAP SIMPAN KE SESSION (supaya halaman lama tidak rusak)
+            # 5. SIMPAN KE SESSION
             # ============================================
             cluster_counts = {
                 int(k): int(v)
@@ -423,12 +490,13 @@ def run_clustering(request):
             cluster_members = {}
             for cluster_id in range(n_clusters):
                 members = customer_agg[customer_agg["Cluster"] == cluster_id][
-                    ["Customer", "Total_Qty", "Total_Omzet"]
-                ].sort_values("Total_Omzet", ascending=False)
+                    ["Customer", "Frekuensi", "Total_Qty", "Total_Omzet"]
+                ].sort_values("Total_Qty", ascending=False)
 
                 cluster_members[str(cluster_id)] = [
                     {
                         "customer": row["Customer"],
+                        "frekuensi": int(row["Frekuensi"]),
                         "qty": round(row["Total_Qty"], 2),
                         "omzet": round(row["Total_Omzet"], 2)
                     }
@@ -444,6 +512,8 @@ def run_clustering(request):
                 "n_clusters": n_clusters,
                 "algorithm": algorithm,
                 "silhouette_score": silhouette,
+                "dbi_score": dbi,
+                "optimal_k_suggestion": optimal_k_suggestion,
                 "file_path": last_file,
                 "hasil_file": output_file,
                 "cluster_counts": cluster_counts,
@@ -452,13 +522,15 @@ def run_clustering(request):
                 "centroids": [
                     {
                         "cluster": i + 1,
-                        "qty": round(c[0], 2),
-                        "total_harga": round(c[1], 2)
+                        "frekuensi": round(c[0], 2),
+                        "qty": round(c[1], 2),
+                        "total_harga": round(c[2], 2)
                     }
                     for i, c in enumerate(centers)
                 ],
                 "stok_warnings": stok_warnings,
-                "history_id": history.id,  # tambahan
+                "history_id": history.id,
+                "label_map": {str(k): v for k, v in label_map.items()},
             }
             request.session.modified = True
 
@@ -470,14 +542,11 @@ def run_clustering(request):
 
             messages.success(
                 request,
-                f"Clustering berhasil! {len(customer_agg)} customer dikelompokkan. (ID: #{history.id})"
+                f"Clustering berhasil! {len(customer_agg)} customer dikelompokkan. "
+                f"Silhouette: {silhouette} | DBI: {dbi} | Saran k optimal: {optimal_k_suggestion}"
             )
 
-            # Redirect ke halaman detail history (baru)
             return redirect("clustering_detail", pk=history.id)
-
-            # Kalau masih ingin ke halaman lama, ganti dengan:
-            # return redirect("clustering_result")
 
         except Exception as e:
             print("=" * 60)
@@ -485,7 +554,6 @@ def run_clustering(request):
             traceback.print_exc()
             print("=" * 60)
 
-            # Update history jadi failed
             if history:
                 history.status = "failed"
                 history.error_message = str(e)
@@ -2012,10 +2080,32 @@ def clustering_history(request):
 def clustering_detail(request, pk):
     history = get_object_or_404(ClusteringHistory, pk=pk, user=request.user)
     clusters = history.clusters.all()
-    
+
+    # Ambil DBI dan saran Elbow dari note (kalau ada)
+    dbi_score = None
+    optimal_k = None
+
+    if history.note:
+        # Contoh note: "File: xxx.xlsx | DBI: 0.5123 | Saran k optimal (Elbow): 3"
+        parts = history.note.split("|")
+        for part in parts:
+            part = part.strip()
+            if part.startswith("DBI:"):
+                try:
+                    dbi_score = float(part.replace("DBI:", "").strip())
+                except:
+                    pass
+            if "Saran k optimal" in part:
+                try:
+                    optimal_k = int(part.split(":")[-1].strip())
+                except:
+                    pass
+
     context = {
         'history': history,
         'clusters': clusters,
+        'dbi_score': dbi_score,
+        'optimal_k': optimal_k,
     }
     return render(request, 'clustering/detail.html', context)
 

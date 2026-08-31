@@ -1,12 +1,6 @@
 def assign_cluster_label(avg_monetary, avg_frequency, avg_recency, all_clusters_stats):
     """
     Memberikan label otomatis ke cluster berdasarkan statistik.
-    all_clusters_stats = list of dict, contoh:
-    [
-        {'monetary': 5000000, 'frequency': 12, 'recency': 5},
-        {'monetary': 1000000, 'frequency': 3, 'recency': 40},
-        ...
-    ]
     """
     if not all_clusters_stats:
         return "Cluster"
@@ -47,15 +41,28 @@ def get_recommendation(label_name):
             "Kurangi biaya pemasaran. Fokus pada efisiensi. "
             "Pertimbangkan campaign edukasi produk."
         ),
+        "Tinggi": (
+            "Prioritas UTAMA. Siapkan stok bahan baku lebih banyak dan pastikan ketersediaan. "
+            "Customer ini sering membeli dan dalam jumlah besar."
+        ),
+        "Sedang": (
+            "Prioritas SEDANG. Pantau stok secara berkala. Siapkan stok sesuai pola rata-rata."
+        ),
+        "Rendah": (
+            "Prioritas RENDAH. Stok disiapkan minimal. Fokus pada efisiensi gudang."
+        ),
     }
     return recommendations.get(label_name, "Analisis lebih lanjut diperlukan.")
 
 
 def get_cluster_color(label_name):
     colors = {
-        "High Value": "#16a34a",   # hijau
-        "Potential": "#0ea5e9",    # biru
-        "At Risk": "#f59e0b",      # oranye
-        "Low Value": "#94a3b8",    # abu-abu
+        "Tinggi": "#16a34a",      # hijau
+        "Sedang": "#0ea5e9",      # biru
+        "Rendah": "#94a3b8",      # abu-abu
+        "High Value": "#16a34a",
+        "Potential": "#0ea5e9",
+        "At Risk": "#f59e0b",
+        "Low Value": "#94a3b8",
     }
     return colors.get(label_name, "#0ea5e9")
