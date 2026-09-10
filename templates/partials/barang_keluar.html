@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-arrow-up text-danger me-2"></i>Barang Keluar
+                    </h5>
+                    <p class="text-muted mb-1">{{ barang.nama_barang }} (<code>{{ barang.kode_barang }}</code>)</p>
+                    <p class="mb-4">
+                        Stok saat ini: 
+                        <strong class="{% if barang.stok_total <= barang.stok_minimum %}text-danger{% else %}text-success{% endif %}">
+                            {{ barang.stok_total }} {{ barang.satuan }}
+                        </strong>
+                        {% if barang.stok_minimum > 0 %}
+                            <small class="text-muted">(Min: {{ barang.stok_minimum }})</small>
+                        {% endif %}
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Qty Keluar <span class="text-danger">*</span></label>
+                            <input type="number" name="qty" class="form-control form-control-lg" 
+                                   step="0.01" min="0.01" max="{{ barang.stok_total }}" 
+                                   placeholder="0" required autofocus>
+                            <div class="form-text">Maksimal: {{ barang.stok_total }} {{ barang.satuan }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Referensi (No. Order / Customer)</label>
+                            <input type="text" name="referensi" class="form-control" 
+                                   placeholder="Contoh: SO-2026-001 / Nama Customer">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Keterangan</label>
+                            <input type="text" name="keterangan" class="form-control" 
+                                   placeholder="Opsional">
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger rounded-pill px-4">
+                                <i class="fas fa-check me-1"></i> Proses Keluar
+                            </button>
+                            <a href="{% url 'detail_barang' barang.id %}" class="btn btn-outline-secondary rounded-pill px-4">
+                                Batal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

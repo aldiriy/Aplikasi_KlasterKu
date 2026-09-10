@@ -12,6 +12,7 @@ from django.shortcuts import redirect
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from django.db import transaction
 
 from .models import (
     Customer, UploadHistory, Barang, KategoriBarang, BatchBarang, TransaksiBarang,
@@ -2643,43 +2644,60 @@ def visualisasi_radar(request):
 @login_required
 def barang_keluar(request, pk):
     barang = get_object_or_404(Barang, pk=pk)
-    
+
     if request.method == "POST":
-        qty = float(request.POST.get("qty", 0))
-        keterangan = request.POST.get("keterangan", "")
-        referensi = request.POST.get("referensi", "")
-        
+        try:
+            qty = float(request.POST.get("qty", 0))
+        except (TypeError, ValueError):
+            messages.error(request, "Qty tidak valid")
+            return redirect("detail_barang", pk=pk)
+
+        keterangan = request.POST.get("keterangan", "").strip()
+        referensi = request.POST.get("referensi", "").strip()
+
         if qty <= 0:
             messages.error(request, "Qty harus lebih dari 0")
             return redirect("detail_barang", pk=pk)
-            
+
         if qty > barang.stok_total:
-            messages.error(request, "Stok tidak mencukupi")
+            messages.error(request, f"Stok tidak mencukupi. Tersedia: {barang.stok_total} {barang.satuan}")
             return redirect("detail_barang", pk=pk)
 
-        # FIFO: ambil batch paling lama dulu
-        batches = barang.batches.filter(sisa__gt=0).order_by("tanggal_masuk", "id")
-        sisa_keluar = qty
-        
-        for batch in batches:
-            if sisa_keluar <= 0:
-                break
-            ambil = min(batch.sisa, sisa_keluar)
-            batch.qty_keluar += ambil
-            batch.save()  # otomatis hitung sisa + update stok_total
-            sisa_keluar -= ambil
+        try:
+            with transaction.atomic():
+                # FIFO: ambil batch paling lama dulu
+                if barang.metode == "LIFO":
+                    batches = barang.batches.filter(sisa__gt=0).order_by("-tanggal_masuk", "-id")
+                else:
+                    batches = barang.batches.filter(sisa__gt=0).order_by("tanggal_masuk", "id")
 
-        TransaksiBarang.objects.create(
-            barang=barang,
-            tipe="KELUAR",
-            qty=qty,
-            tanggal=date.today(),
-            keterangan=keterangan,
-            referensi=referensi,
-            created_by=request.user
-        )
-        
-        messages.success(request, f"Berhasil keluar {qty} {barang.satuan}")
+                sisa_keluar = qty
+
+                for batch in batches:
+                    if sisa_keluar <= 0:
+                        break
+                    ambil = min(batch.sisa, sisa_keluar)
+                    batch.qty_keluar += ambil
+                    batch.save()  # asumsi ada signal/save yang update sisa + stok_total
+                    sisa_keluar -= ambil
+
+                if sisa_keluar > 0:
+                    raise Exception("Stok batch tidak mencukupi")
+
+                TransaksiBarang.objects.create(
+                    barang=barang,
+                    tipe="KELUAR",
+                    qty=qty,
+                    tanggal=date.today(),
+                    keterangan=keterangan,
+                    referensi=referensi,
+                    created_by=request.user
+                )
+
+            messages.success(request, f"Berhasil keluar {qty} {barang.satuan}")
+        except Exception as e:
+            messages.error(request, f"Gagal proses keluar: {str(e)}")
+
         return redirect("detail_barang", pk=pk)
 
     return render(request, "partials/barang_keluar.html", {"barang": barang})
