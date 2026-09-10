@@ -1,7 +1,6 @@
 {% load static %}
 
 <style>
-    /* ========== Dashboard Styles ========== */
     .hero-card {
         background: linear-gradient(135deg, #123458 0%, #1e4a7a 100%);
         color: white;
@@ -83,7 +82,6 @@
         border-radius: 50px;
     }
 
-    /* Popup */
     .custom-popup {
         position: absolute;
         background: white;
@@ -98,11 +96,8 @@
     }
 </style>
 
-<!-- ================= HERO ================= -->
-
-<!-- ================= KPI ================= -->
+<!-- ================= KPI UTAMA ================= -->
 <div class="row g-3 mb-4">
-    <!-- Total Customer -->
     <div class="col-6 col-xl-3">
         <div class="card kpi-card shadow-sm h-100" data-title="Total Customer" data-value="{{ total_customer|default:0 }}" data-desc="Jumlah keseluruhan customer aktif">
             <div class="card-body d-flex align-items-center gap-3">
@@ -118,7 +113,6 @@
         </div>
     </div>
 
-    <!-- Total Dataset -->
     <div class="col-6 col-xl-3">
         <div class="card kpi-card shadow-sm h-100" data-title="Total Dataset" data-value="{{ total_data|default:0 }}" data-desc="Total data transaksi yang diupload">
             <div class="card-body d-flex align-items-center gap-3">
@@ -134,7 +128,6 @@
         </div>
     </div>
 
-    <!-- Total Produk -->
     <div class="col-6 col-xl-3">
         <div class="card kpi-card shadow-sm h-100" data-title="Total Produk" data-value="{{ total_produk|default:0 }}" data-desc="Jumlah produk yang aktif terjual">
             <div class="card-body d-flex align-items-center gap-3">
@@ -150,7 +143,6 @@
         </div>
     </div>
 
-    <!-- Total Cluster -->
     <div class="col-6 col-xl-3">
         <div class="card kpi-card shadow-sm h-100" data-title="Total Cluster" data-value="{{ total_cluster|default:0 }}" data-desc="Jumlah cluster hasil algoritma K-Means">
             <div class="card-body d-flex align-items-center gap-3">
@@ -167,9 +159,88 @@
     </div>
 </div>
 
+<!-- ================= KPI GUDANG ================= -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #16a34a, #15803d);">
+                    <i class="fas fa-box-seam"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Master Barang</div>
+                    <h3 class="fw-bold mb-0">{{ total_barang|default:0 }}</h3>
+                    <small class="text-success">Item</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-tag"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Master Label</div>
+                    <h3 class="fw-bold mb-0">{{ total_label|default:0 }}</h3>
+                    <small class="text-success">Item</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
+                    <i class="fas fa-archive"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Master Kemasan</div>
+                    <h3 class="fw-bold mb-0">{{ total_kemasan|default:0 }}</h3>
+                    <small class="text-success">Item</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="card kpi-card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Customer DB</div>
+                    <h3 class="fw-bold mb-0">{{ total_customer_db|default:total_customer }}</h3>
+                    <small class="text-success">Master</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if barang_menipis %}
+<div class="alert alert-warning border-0 shadow-sm mb-4">
+    <h6 class="fw-bold mb-2">
+        <i class="fas fa-exclamation-triangle me-2"></i>Stok Menipis
+    </h6>
+    <ul class="mb-0">
+        {% for b in barang_menipis %}
+        <li>
+            {{ b.nama_barang }} — 
+            Sisa: <strong>{{ b.stok_total }}</strong> 
+            (Min: {{ b.stok_minimum }})
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
 <!-- ================= STATISTIK + TOP CUSTOMER ================= -->
 <div class="row g-4 mb-4">
-    <!-- Chart Statistik -->
     <div class="col-lg-8">
         <div class="card section-card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -185,7 +256,6 @@
         </div>
     </div>
 
-    <!-- Top Customer -->
     <div class="col-lg-4">
         <div class="card section-card h-100">
             <div class="card-header">
@@ -226,7 +296,6 @@
 
 <!-- ================= TOP SALES + RINGKASAN ================= -->
 <div class="row g-4 mb-4">
-    <!-- Top Sales -->
     <div class="col-lg-8">
         <div class="card section-card h-100">
             <div class="card-header">
@@ -253,7 +322,6 @@
         </div>
     </div>
 
-    <!-- Ringkasan -->
     <div class="col-lg-4">
         <div class="card section-card h-100">
             <div class="card-header">
@@ -298,7 +366,6 @@
 
 <!-- ================= TOP PRODUK + DISTRIBUSI CLUSTER ================= -->
 <div class="row g-4 mb-4">
-    <!-- Top Produk -->
     <div class="col-lg-6">
         <div class="card section-card h-100">
             <div class="card-header">
@@ -336,7 +403,6 @@
         </div>
     </div>
 
-    <!-- Distribusi Cluster -->
     <div class="col-lg-6">
         <div class="card section-card h-100">
             <div class="card-header">
@@ -370,11 +436,9 @@
     <small id="popupDetail" class="text-muted"></small>
 </div>
 
-<!-- ================= SCRIPTS ================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Popup
     const popup = document.getElementById('customPopup');
 
     function showPopup(e, title, value, detail) {
@@ -397,7 +461,6 @@ document.addEventListener('DOMContentLoaded', function () {
         el.addEventListener('mouseleave', hidePopup);
     });
 
-    // Chart Statistik Customer
     const customerChartEl = document.getElementById('customerChart');
     if (customerChartEl) {
         new Chart(customerChartEl, {
@@ -419,23 +482,15 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: '#f1f5f9' }
-                    },
-                    x: {
-                        grid: { display: false }
-                    }
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                    x: { grid: { display: false } }
                 }
             }
         });
     }
 
-    // Chart Distribusi Cluster
     const clusterChartEl = document.getElementById('clusterChart');
     if (clusterChartEl) {
         const labels = {% if cluster_labels %}{{ cluster_labels|safe }}{% else %}[]{% endif %};
@@ -464,11 +519,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 16,
-                                font: { size: 12 }
-                            }
+                            labels: { usePointStyle: true, padding: 16, font: { size: 12 } }
                         }
                     }
                 }
@@ -476,7 +527,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Counter Animation
     document.querySelectorAll('.counter').forEach(el => {
         const target = parseInt(el.innerText.replace(/\D/g, '')) || 0;
         if (target === 0) return;

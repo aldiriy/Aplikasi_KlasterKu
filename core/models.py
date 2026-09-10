@@ -297,6 +297,7 @@ class Barang(models.Model):
     satuan = models.CharField(max_length=50, default="pcs")
     metode = models.CharField(max_length=10, choices=METODE_CHOICES, default="FIFO")
     stok_total = models.FloatField(default=0)
+    stok_minimum = models.FloatField(default=0, help_text="Batas stok minimum untuk peringatan")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -323,7 +324,7 @@ class BatchBarang(models.Model):
     sisa = models.FloatField()
     keterangan = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    tanggal_expired = models.DateField(null=True, blank=True, help_text="Tanggal kadaluarsa batch")
     class Meta:
         verbose_name = "Batch Barang"
         verbose_name_plural = "Batch Barang"
@@ -392,6 +393,7 @@ class Label(models.Model):
     satuan = models.CharField(max_length=30, default="pcs")
     metode = models.CharField(max_length=10, choices=METODE_CHOICES, default="FIFO")
     stok_total = models.FloatField(default=0)
+    stok_minimum = models.FloatField(default=0, help_text="Batas stok minimum untuk peringatan")
     keterangan = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -417,6 +419,7 @@ class BatchLabel(models.Model):
     qty_masuk = models.FloatField()
     qty_keluar = models.FloatField(default=0)
     sisa = models.FloatField()
+    stok_minimum = models.FloatField(default=0, help_text="Batas stok minimum untuk peringatan")
     keterangan = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -470,6 +473,7 @@ class Kemasan(models.Model):
     satuan = models.CharField(max_length=30, default="pcs")
     metode = models.CharField(max_length=10, choices=METODE_CHOICES, default="FIFO")
     stok_total = models.FloatField(default=0)
+    stok_minimum = models.FloatField(default=0, help_text="Batas stok minimum untuk peringatan")
     keterangan = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

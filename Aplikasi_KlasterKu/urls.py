@@ -47,6 +47,7 @@ urlpatterns = [
     path("barang-masuk/<int:pk>/", views.barang_masuk, name="barang_masuk"),
     path("detail-barang/<int:pk>/", views.detail_barang, name="detail_barang"),
     path("upload-stok-barang/", views.upload_stok_barang, name="upload_stok_barang"),
+    path("barang-keluar/<int:pk>/", views.barang_keluar, name="barang_keluar"),
 
     # Master Label
     path("master-label/", views.master_label, name="master_label"),

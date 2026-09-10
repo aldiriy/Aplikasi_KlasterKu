@@ -573,6 +573,24 @@ function confirmLogout() {
         }
     });
 }
+
+function confirmDelete(url, nama) {
+    Swal.fire({
+        title: 'Hapus Data?',
+        html: `Yakin ingin menghapus <b>${nama}</b>?<br><small class="text-danger">Tindakan ini tidak bisa dibatalkan.</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = url;
+        }
+    });
+}
 </script>
 
 {% if messages %}

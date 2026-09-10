@@ -42,10 +42,70 @@ def dashboard(request):
     if not request.user.is_profile_complete:
         return redirect("profile")
 
+    from django.db.models import Sum, Count, F, Q
+    from datetime import date, timedelta
+    import os
+    import traceback
+    import pandas as pd
+
+    # =========================
+    # DATA REAL DARI DATABASE
+    # =========================
+    total_customer_db = Customer.objects.count()
+    total_barang = Barang.objects.count()
+    total_label = Label.objects.count()
+    total_kemasan = Kemasan.objects.count()
+
+    # Stok menipis
+    barang_menipis = (
+        Barang.objects
+        .filter(stok_total__lte=F("stok_minimum"))
+        .exclude(stok_minimum=0)
+        .order_by("stok_total")[:5]
+    )
+
+    # Batch hampir / sudah expired (30 hari ke depan)
+    batas_expired = date.today() + timedelta(days=30)
+    batch_expired = (
+        BatchBarang.objects
+        .filter(
+            tanggal_expired__isnull=False,
+            tanggal_expired__lte=batas_expired,
+            sisa__gt=0
+        )
+        .select_related("barang")
+        .order_by("tanggal_expired")[:5]
+    )
+
+    # Clustering terakhir
+    last_clustering = (
+        ClusteringHistory.objects
+        .filter(status="completed")
+        .order_by("-created_at")
+        .first()
+    )
+
+    # Barang stok paling sedikit (untuk carousel)
+    barang_tersedikit = Barang.objects.order_by("stok_total").first()
+
+    # =========================
+    # DATA DARI SESSION + FILE
+    # =========================
     last_file = request.session.get("last_uploaded_file")
     result = request.session.get("clustering_result")
 
     context = {
+        # Database
+        "total_customer_db": total_customer_db,
+        "total_barang": total_barang,
+        "total_label": total_label,
+        "total_kemasan": total_kemasan,
+        "barang_menipis": barang_menipis,
+        "batch_expired": batch_expired,
+        "last_clustering": last_clustering,
+        "barang_tersedikit": barang_tersedikit,
+
+        # Default dari file/session
         "total_customer": 0,
         "total_data": 0,
         "total_produk": 0,
@@ -67,19 +127,22 @@ def dashboard(request):
         "cluster_values": [],
     }
 
-    # Ambil data clustering dari session
+    # =========================
+    # CLUSTERING DARI SESSION
+    # =========================
     if result:
         context["total_cluster"] = result.get("n_clusters", 0)
         context["silhouette_score"] = result.get("silhouette_score", "-")
         context["cluster_counts"] = result.get("cluster_counts", {})
         context["centroids"] = result.get("centroids", [])
 
-        # Data untuk chart distribusi cluster
         if result.get("cluster_counts"):
             context["cluster_labels"] = [f"Cluster {int(k) + 1}" for k in result["cluster_counts"].keys()]
             context["cluster_values"] = list(result["cluster_counts"].values())
 
-    # Ambil data real dari file upload terakhir
+    # =========================
+    # DATA DARI FILE UPLOAD
+    # =========================
     if last_file and os.path.exists(last_file):
         try:
             if last_file.endswith(".xlsx"):
@@ -89,7 +152,6 @@ def dashboard(request):
 
             df.columns = df.columns.str.strip()
 
-            # Bersihkan data numerik
             if "Qty" in df.columns:
                 df["Qty"] = pd.to_numeric(df["Qty"], errors="coerce").fillna(0)
 
@@ -104,7 +166,6 @@ def dashboard(request):
                 )
                 df["Total Harga"] = pd.to_numeric(df["Total Harga"], errors="coerce").fillna(0)
 
-            # KPI Utama
             context["total_data"] = len(df)
             context["last_upload"] = os.path.basename(last_file)
 
@@ -120,13 +181,11 @@ def dashboard(request):
             if "Total Harga" in df.columns:
                 context["total_omzet"] = "{:,.0f}".format(df["Total Harga"].sum())
 
-            # Top Sales
             if "Sales" in df.columns:
                 context["top_sales"] = (
                     df.groupby("Sales").size().sort_values(ascending=False).head(5).to_dict()
                 )
 
-            # Top Customer
             if "Customer" in df.columns and "Total Harga" in df.columns:
                 context["top_customers"] = (
                     df.groupby("Customer")["Total Harga"]
@@ -136,13 +195,11 @@ def dashboard(request):
                     .to_dict()
                 )
 
-            # Top Produk
             if "Produk" in df.columns:
                 context["top_products"] = (
                     df.groupby("Produk").size().sort_values(ascending=False).head(5).to_dict()
                 )
 
-            # PIE CHART (Sales)
             if "Sales" in df.columns:
                 pie = df.groupby("Sales").size().sort_values(ascending=False)
                 context["pie_labels"] = [str(x) for x in pie.index.tolist()]
@@ -2582,3 +2639,47 @@ def visualisasi_radar(request):
         "radar_datasets": datasets,
         "has_data": bool(datasets),
     })
+
+@login_required
+def barang_keluar(request, pk):
+    barang = get_object_or_404(Barang, pk=pk)
+    
+    if request.method == "POST":
+        qty = float(request.POST.get("qty", 0))
+        keterangan = request.POST.get("keterangan", "")
+        referensi = request.POST.get("referensi", "")
+        
+        if qty <= 0:
+            messages.error(request, "Qty harus lebih dari 0")
+            return redirect("detail_barang", pk=pk)
+            
+        if qty > barang.stok_total:
+            messages.error(request, "Stok tidak mencukupi")
+            return redirect("detail_barang", pk=pk)
+
+        # FIFO: ambil batch paling lama dulu
+        batches = barang.batches.filter(sisa__gt=0).order_by("tanggal_masuk", "id")
+        sisa_keluar = qty
+        
+        for batch in batches:
+            if sisa_keluar <= 0:
+                break
+            ambil = min(batch.sisa, sisa_keluar)
+            batch.qty_keluar += ambil
+            batch.save()  # otomatis hitung sisa + update stok_total
+            sisa_keluar -= ambil
+
+        TransaksiBarang.objects.create(
+            barang=barang,
+            tipe="KELUAR",
+            qty=qty,
+            tanggal=date.today(),
+            keterangan=keterangan,
+            referensi=referensi,
+            created_by=request.user
+        )
+        
+        messages.success(request, f"Berhasil keluar {qty} {barang.satuan}")
+        return redirect("detail_barang", pk=pk)
+
+    return render(request, "partials/barang_keluar.html", {"barang": barang})
