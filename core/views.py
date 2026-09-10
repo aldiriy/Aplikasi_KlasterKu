@@ -298,6 +298,7 @@ def upload_data(request):
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def run_clustering(request):
     last_file = request.session.get("last_uploaded_file")
 
@@ -667,6 +668,7 @@ def run_clustering(request):
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def clustering_result(request):
     result = request.session.get("clustering_result")
     if not result:
@@ -691,6 +693,7 @@ def clustering_result(request):
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def download_report(request):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
@@ -981,6 +984,7 @@ from django.contrib.auth import logout
 from django.shortcuts import redirect
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def logout_view(request):
     logout(request)
     request.session.flush()
@@ -989,6 +993,7 @@ def logout_view(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def change_password(request):
     form = ChangePasswordForm(request.user, request.POST or None)
 
@@ -1005,6 +1010,7 @@ def change_password(request):
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def master_customer(request):
     q = request.GET.get("q", "").strip()
     customers = Customer.objects.all().order_by("nama_customer")
@@ -1029,6 +1035,7 @@ def master_customer(request):
     })
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def tambah_customer(request):
     if request.method == "POST":
         nama = request.POST.get("nama_customer")
@@ -1052,6 +1059,7 @@ def tambah_customer(request):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def edit_customer(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
 
@@ -1071,6 +1079,7 @@ def edit_customer(request, pk):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def hapus_customer(request, pk):
     customer = get_object_or_404(Customer, pk=pk)
     customer.delete()
@@ -1083,6 +1092,7 @@ def hapus_customer(request, pk):
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def upload_data(request):
     if not request.user.is_profile_complete:
         return redirect("profile")
@@ -1146,6 +1156,7 @@ def upload_data(request):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def hapus_upload(request, pk):
     upload = get_object_or_404(UploadHistory, pk=pk, user=request.user)
 
@@ -1166,6 +1177,7 @@ def hapus_upload(request, pk):
     return redirect("upload_data")
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def profile(request):
     if request.method == "POST":
         form = ProfileForm(request.POST, request.FILES, instance=request.user)
@@ -1197,6 +1209,7 @@ def profile(request):
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def master_barang(request):
     q = request.GET.get("q", "").strip()
     barangs = Barang.objects.select_related("kategori").all().order_by("nama_barang")
@@ -1221,6 +1234,7 @@ def master_barang(request):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def tambah_barang(request):
     kategoris = KategoriBarang.objects.all()
 
@@ -1282,6 +1296,7 @@ def tambah_barang(request):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def edit_barang(request, pk):
     barang = get_object_or_404(Barang, pk=pk)
     kategoris = KategoriBarang.objects.all()
@@ -1309,6 +1324,7 @@ def edit_barang(request, pk):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def hapus_barang(request, pk):
     barang = get_object_or_404(Barang, pk=pk)
     nama = barang.nama_barang
@@ -1318,6 +1334,7 @@ def hapus_barang(request, pk):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def barang_masuk(request, pk):
     barang = get_object_or_404(Barang, pk=pk)
 
@@ -1502,6 +1519,7 @@ def kurangi_stok_kemasan(kemasan, qty_dibutuhkan, tanggal=None, keterangan="", r
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def master_label(request):
     q = request.GET.get("q", "").strip()
     labels = Label.objects.all().order_by("nama_label")
@@ -1782,6 +1800,7 @@ def upload_label(request):
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def master_kemasan(request):
     q = request.GET.get("q", "").strip()
     kemasans = Kemasan.objects.all().order_by("nama_kemasan")
@@ -2218,6 +2237,7 @@ def upload_stok_barang(request):
     return render(request, "partials/upload_stok_barang.html")
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def clustering_history(request):
     histories = ClusteringHistory.objects.filter(user=request.user)
     
@@ -2243,6 +2263,7 @@ def clustering_history(request):
 
 # ===================== DETAIL HISTORY =====================
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def clustering_detail(request, pk):
     history = get_object_or_404(ClusteringHistory, pk=pk, user=request.user)
     clusters = history.clusters.all()
@@ -2278,6 +2299,7 @@ def clustering_detail(request, pk):
 
 # ===================== MEMBER CLUSTER =====================
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def cluster_members(request, pk, cluster_id):
     history = get_object_or_404(ClusteringHistory, pk=pk, user=request.user)
     cluster = get_object_or_404(ClusterDetail, history=history, cluster_label=cluster_id)
@@ -2302,6 +2324,7 @@ def cluster_members(request, pk, cluster_id):
 
 # ===================== STATUS (AJAX) =====================
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def clustering_status(request, pk):
     history = get_object_or_404(ClusteringHistory, pk=pk, user=request.user)
     return JsonResponse({
@@ -2315,6 +2338,7 @@ def clustering_status(request, pk):
 
 # ===================== EXPORT EXCEL =====================
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def export_clustering_excel(request, pk):
     history = get_object_or_404(ClusteringHistory, pk=pk, user=request.user)
     
@@ -2407,6 +2431,7 @@ def export_clustering_excel(request, pk):
 # PREFERENSI & TEMA
 # ==========================================================
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def preferensi(request):
     return render(request, "preferensi.html")
 
@@ -2415,6 +2440,7 @@ def preferensi(request):
 # PENGADUAN
 # ==========================================================
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def pengaduan(request):
     if request.method == "POST":
         # Sementara hanya simpan pesan sukses
@@ -2425,6 +2451,7 @@ def pengaduan(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def preprocessing_bersih(request):
     last_file = request.session.get("last_uploaded_file")
     context = {
@@ -2466,6 +2493,7 @@ def preprocessing_bersih(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def preprocessing_normalisasi(request):
     last_file = request.session.get("last_uploaded_file")
     context = {
@@ -2520,6 +2548,7 @@ def preprocessing_normalisasi(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def preprocessing_seleksi(request):
     last_file = request.session.get("last_uploaded_file")
     context = {
@@ -2548,6 +2577,7 @@ def preprocessing_seleksi(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def preprocessing_outlier(request):
     last_file = request.session.get("last_uploaded_file")
     context = {
@@ -2609,6 +2639,7 @@ def preprocessing_outlier(request):
 # ==========================================================
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def visualisasi_distribusi(request):
     last_history = ClusteringHistory.objects.filter(
         user=request.user, status="completed"
@@ -2644,6 +2675,7 @@ def visualisasi_distribusi(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def visualisasi_scatter(request):
     last_history = ClusteringHistory.objects.filter(
         user=request.user, status="completed"
@@ -2680,6 +2712,7 @@ def visualisasi_scatter(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def visualisasi_heatmap(request):
     # Heatmap biasanya butuh data mentah, untuk sementara tetap tampilkan contoh yang bagus
     return render(request, "visualisasi/heatmap.html", {
@@ -2688,6 +2721,7 @@ def visualisasi_heatmap(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def visualisasi_elbow(request):
     # Elbow Method biasanya dihitung saat proses clustering.
     # Untuk sementara kita tampilkan grafik contoh yang sudah bagus.
@@ -2697,6 +2731,7 @@ def visualisasi_elbow(request):
 
 
 @login_required
+@role_required("ADMIN", "SALES", "GUDANG")
 def visualisasi_radar(request):
     last_history = ClusteringHistory.objects.filter(
         user=request.user, status="completed"
@@ -2738,6 +2773,7 @@ def visualisasi_radar(request):
     })
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def barang_keluar(request, pk):
     barang = get_object_or_404(Barang, pk=pk)
 
@@ -2802,6 +2838,7 @@ def barang_keluar(request, pk):
 # EXPORT EXCEL MASTER DATA
 # ==========================================================
 @login_required
+@role_required("ADMIN", "GUDANG")
 def export_master_barang(request):
     wb = Workbook()
     ws = wb.active
@@ -2850,6 +2887,7 @@ def export_master_barang(request):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def export_master_label(request):
     wb = Workbook()
     ws = wb.active
@@ -2892,6 +2930,7 @@ def export_master_label(request):
 
 
 @login_required
+@role_required("ADMIN", "GUDANG")
 def export_master_kemasan(request):
     wb = Workbook()
     ws = wb.active
@@ -2936,6 +2975,7 @@ def export_master_kemasan(request):
 # LABEL KELUAR
 # ==========================================================
 @login_required
+@role_required("ADMIN", "GUDANG")
 def label_keluar(request, pk):
     label = get_object_or_404(Label, pk=pk)
 
@@ -2999,6 +3039,7 @@ def label_keluar(request, pk):
 # KEMASAN KELUAR
 # ==========================================================
 @login_required
+@role_required("ADMIN", "GUDANG")
 def kemasan_keluar(request, pk):
     kemasan = get_object_or_404(Kemasan, pk=pk)
 
@@ -3057,6 +3098,7 @@ def kemasan_keluar(request, pk):
 
     return render(request, "partials/kemasan_keluar.html", {"kemasan": kemasan})
 
+@role_required("ADMIN", "GUDANG")
 def role_required(*roles):
     def decorator(view_func):
         @wraps(view_func)

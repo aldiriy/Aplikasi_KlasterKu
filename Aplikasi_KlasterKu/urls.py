@@ -20,6 +20,8 @@ from core.views import (
 )
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
+
     path('', views.dashboard, name='dashboard'),
     path('upload-data/', views.upload_data, name='upload_data'),
     path('upload-data/hapus/<int:pk>/', views.hapus_upload, name='hapus_upload'),   # ← tambah ini
