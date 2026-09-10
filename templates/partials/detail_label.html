@@ -1,15 +1,28 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1">{{ label.nama_label }}</h4>
-            <p class="text-muted mb-0"><code>{{ label.kode_label }}</code> • Stok: <strong>{{ label.stok_total }} {{ label.satuan }}</strong></p>
+            <p class="text-muted mb-0">
+                <code>{{ label.kode_label }}</code> •
+                Stok: <strong class="{% if label.stok_total <= 0 %}text-danger{% else %}text-success{% endif %}">
+                    {{ label.stok_total }} {{ label.satuan }}
+                </strong>
+            </p>
         </div>
-        <a href="{% url 'master_label' %}" class="btn btn-outline-secondary rounded-pill px-4">Kembali</a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'label_masuk' label.id %}" class="btn btn-success rounded-pill px-3">
+                <i class="fas fa-plus me-1"></i> Masuk
+            </a>
+            <a href="{% url 'label_keluar' label.id %}" class="btn btn-danger rounded-pill px-3">
+                <i class="fas fa-minus me-1"></i> Keluar
+            </a>
+            <a href="{% url 'master_label' %}" class="btn btn-outline-secondary rounded-pill px-3">Kembali</a>
+        </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
             <h6 class="fw-bold mb-3">Riwayat Batch</h6>
             <div class="table-responsive">
@@ -17,9 +30,9 @@
                     <thead class="table-light">
                         <tr>
                             <th>Tanggal</th>
-                            <th>Masuk</th>
-                            <th>Keluar</th>
-                            <th>Sisa</th>
+                            <th class="text-end">Masuk</th>
+                            <th class="text-end">Keluar</th>
+                            <th class="text-end">Sisa</th>
                             <th>Keterangan</th>
                         </tr>
                     </thead>
@@ -27,9 +40,9 @@
                         {% for b in batches %}
                         <tr>
                             <td>{{ b.tanggal_masuk }}</td>
-                            <td>{{ b.qty_masuk }}</td>
-                            <td>{{ b.qty_keluar }}</td>
-                            <td>{{ b.sisa }}</td>
+                            <td class="text-end">{{ b.qty_masuk }}</td>
+                            <td class="text-end">{{ b.qty_keluar }}</td>
+                            <td class="text-end">{{ b.sisa }}</td>
                             <td>{{ b.keterangan|default:"-" }}</td>
                         </tr>
                         {% empty %}

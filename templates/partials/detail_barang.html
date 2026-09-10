@@ -1,59 +1,104 @@
 {% extends 'base.html' %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold mb-1">{{ barang.nama_barang }}</h4>
-        <p class="text-muted mb-0">
-            <code>{{ barang.kode_barang }}</code> • 
-            Stok: <strong>{{ barang.stok_total }} {{ barang.satuan }}</strong>
-        </p>
-    </div>
-    <div class="d-flex gap-2">
-        <a href="{% url 'barang_masuk' barang.id %}" class="btn btn-success rounded-pill px-3">
-            <i class="fas fa-plus me-1"></i> Masuk
-        </a>
-        <a href="{% url 'barang_keluar' barang.id %}" class="btn btn-danger rounded-pill px-3">
-            <i class="fas fa-minus me-1"></i> Keluar
-        </a>
-        <a href="{% url 'master_barang' %}" class="btn btn-outline-secondary rounded-pill px-3">
-            Kembali
-        </a>
-    </div>
-</div>
 {% block content %}
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1">{{ barang.nama_barang }}</h4>
-            <p class="text-muted mb-0"><code>{{ barang.kode_barang }}</code> • Stok: <strong>{{ barang.stok_total }} {{ barang.satuan }}</strong></p>
+            <p class="text-muted mb-0">
+                <code>{{ barang.kode_barang }}</code> •
+                Stok: <strong class="{% if barang.stok_total <= 0 %}text-danger{% else %}text-success{% endif %}">
+                    {{ barang.stok_total }} {{ barang.satuan }}
+                </strong>
+                • Metode: <span class="badge {% if barang.metode == 'FIFO' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ barang.metode }}</span>
+            </p>
         </div>
-        <a href="{% url 'master_barang' %}" class="btn btn-outline-secondary rounded-pill px-4">Kembali</a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'barang_masuk' barang.id %}" class="btn btn-success rounded-pill px-3">
+                <i class="fas fa-plus me-1"></i> Masuk
+            </a>
+            <a href="{% url 'barang_keluar' barang.id %}" class="btn btn-danger rounded-pill px-3">
+                <i class="fas fa-minus me-1"></i> Keluar
+            </a>
+            <a href="{% url 'edit_barang' barang.id %}" class="btn btn-outline-primary rounded-pill px-3">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+            <a href="{% url 'master_barang' %}" class="btn btn-outline-secondary rounded-pill px-3">
+                Kembali
+            </a>
+        </div>
     </div>
 
+    <!-- Riwayat Batch -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
-            <h6 class="fw-bold mb-3">Riwayat Batch</h6>
+            <h6 class="fw-bold mb-3"><i class="fas fa-layer-group me-2"></i>Riwayat Batch</h6>
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
+                <table class="table table-sm table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Tanggal</th>
-                            <th>Masuk</th>
-                            <th>Keluar</th>
-                            <th>Sisa</th>
+                            <th>Tanggal Masuk</th>
+                            <th class="text-end">Qty Masuk</th>
+                            <th class="text-end">Qty Keluar</th>
+                            <th class="text-end">Sisa</th>
                             <th>Keterangan</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for b in batches %}
                         <tr>
-                            <td>{{ b.tanggal_masuk }}</td>
-                            <td>{{ b.qty_masuk }}</td>
-                            <td>{{ b.qty_keluar }}</td>
-                            <td>{{ b.sisa }}</td>
+                            <td>{{ b.tanggal_masuk|date:"d M Y" }}</td>
+                            <td class="text-end">{{ b.qty_masuk }}</td>
+                            <td class="text-end">{{ b.qty_keluar }}</td>
+                            <td class="text-end fw-semibold {% if b.sisa <= 0 %}text-muted{% else %}text-success{% endif %}">{{ b.sisa }}</td>
                             <td>{{ b.keterangan|default:"-" }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="5" class="text-center text-muted">Belum ada batch</td></tr>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">Belum ada batch</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Riwayat Transaksi -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+            <h6 class="fw-bold mb-3"><i class="fas fa-history me-2"></i>Riwayat Transaksi (50 terakhir)</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Tipe</th>
+                            <th class="text-end">Qty</th>
+                            <th>Referensi</th>
+                            <th>Keterangan</th>
+                            <th>Oleh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in transaksis %}
+                        <tr>
+                            <td>{{ t.tanggal|date:"d M Y" }}</td>
+                            <td>
+                                {% if t.tipe == "MASUK" %}
+                                    <span class="badge bg-success">MASUK</span>
+                                {% else %}
+                                    <span class="badge bg-danger">KELUAR</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-semibold">{{ t.qty }}</td>
+                            <td>{{ t.referensi|default:"-" }}</td>
+                            <td>{{ t.keterangan|default:"-" }}</td>
+                            <td>{{ t.created_by.username|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">Belum ada transaksi</td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>

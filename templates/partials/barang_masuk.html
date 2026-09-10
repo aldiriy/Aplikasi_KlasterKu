@@ -5,27 +5,44 @@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Tambah Stok Barang</h5>
-                    <p class="text-muted mb-3">{{ barang.nama_barang }} (<code>{{ barang.kode_barang }}</code>)</p>
-                    <p class="mb-4">Stok saat ini: <strong>{{ barang.stok_total }} {{ barang.satuan }}</strong></p>
+                    <h5 class="fw-bold mb-1">
+                        <i class="fas fa-plus-circle text-success me-2"></i>Tambah Stok Barang
+                    </h5>
+                    <p class="text-muted mb-1">{{ barang.nama_barang }} (<code>{{ barang.kode_barang }}</code>)</p>
+                    <p class="mb-4">
+                        Stok saat ini:
+                        <strong class="{% if barang.stok_total <= 0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ barang.stok_total }} {{ barang.satuan }}
+                        </strong>
+                    </p>
 
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label class="form-label">Qty Masuk</label>
-                            <input type="number" name="qty" class="form-control" step="0.01" min="0.01" required>
+                            <label class="form-label">Qty Masuk <span class="text-danger">*</span></label>
+                            <input type="number" name="qty" class="form-control form-control-lg"
+                                   step="0.01" min="0.01" required autofocus>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Tanggal</label>
-                            <input type="date" name="tanggal" class="form-control" value="{{ today|default:'' }}">
+                            <label class="form-label">Tanggal Masuk</label>
+                            <input type="date" name="tanggal" class="form-control"
+                                   value="{{ today }}">
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">Tanggal Expired <span class="text-muted">(opsional)</span></label>
+                            <input type="date" name="tanggal_expired" class="form-control">
+                            <div class="form-text">Isi agar muncul di alert dashboard jika hampir/sudah expired.</div>
+                        </div>
+                        <div class="mb-4">
                             <label class="form-label">Keterangan</label>
-                            <input type="text" name="keterangan" class="form-control">
+                            <input type="text" name="keterangan" class="form-control"
+                                   placeholder="Contoh: Stok awal / PO-001">
                         </div>
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-success rounded-pill px-4">Simpan</button>
-                            <a href="{% url 'master_barang' %}" class="btn btn-outline-secondary rounded-pill px-4">Batal</a>
+                            <button type="submit" class="btn btn-success rounded-pill px-4">
+                                <i class="fas fa-check me-1"></i> Simpan
+                            </button>
+                            <a href="{% url 'detail_barang' barang.id %}" class="btn btn-outline-secondary rounded-pill px-4">Batal</a>
                         </div>
                     </form>
                 </div>

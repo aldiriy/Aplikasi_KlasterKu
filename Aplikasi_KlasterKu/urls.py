@@ -73,6 +73,12 @@ urlpatterns = [
     path('clustering/export/<int:pk>/', views.export_clustering_excel, name='export_clustering_excel'),
     path('clustering/status/<int:pk>/', views.clustering_status, name='clustering_status'),
 
+    path("export/master-barang/", views.export_master_barang, name="export_master_barang"),
+    path("export/master-label/", views.export_master_label, name="export_master_label"),
+    path("export/master-kemasan/", views.export_master_kemasan, name="export_master_kemasan"),
+    path("label-keluar/<int:pk>/", views.label_keluar, name="label_keluar"),
+    path("kemasan-keluar/<int:pk>/", views.kemasan_keluar, name="kemasan_keluar"),
+
     # Preferensi & Pengaduan
     path('preferensi/', views.preferensi, name='preferensi'),
     path('pengaduan/', views.pengaduan, name='pengaduan'),

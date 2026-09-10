@@ -1,22 +1,43 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h3 class="fw-bold mb-1">
-                <i class="fas fa-box text-primary me-2"></i>
-                Master Kemasan
+                <i class="fas fa-box text-primary me-2"></i>Master Kemasan
             </h3>
-            <p class="text-muted mb-0">Kelola stok Kemasan (FIFO / LIFO)</p>
+            <p class="text-muted mb-0">Kelola stok kemasan (FIFO / LIFO) • Total: {{ total_count }} data</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="{% url 'upload_kemasan' %}" class="btn btn-success rounded-pill px-4">
                 <i class="fas fa-file-excel me-2"></i>Upload Excel
             </a>
             <a href="{% url 'tambah_kemasan' %}" class="btn btn-primary rounded-pill px-4">
                 <i class="fas fa-plus me-2"></i>Tambah Kemasan
             </a>
+            <a href="{% url 'export_master_kemasan' %}" class="btn btn-outline-success rounded-pill px-4">
+                <i class="fas fa-file-excel me-2"></i>Export Excel
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="q" value="{{ q }}" class="form-control"
+                               placeholder="Cari kode atau nama kemasan...">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Cari</button>
+                    {% if q %}
+                    <a href="{% url 'master_kemasan' %}" class="btn btn-outline-secondary rounded-pill px-3">Reset</a>
+                    {% endif %}
+                </div>
+            </form>
         </div>
     </div>
 
@@ -39,7 +60,7 @@
                     <tbody>
                         {% for l in kemasans %}
                         <tr>
-                            <td>{{ forloop.counter }}</td>
+                            <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
                             <td><code>{{ l.kode_kemasan }}</code></td>
                             <td class="fw-semibold">{{ l.nama_kemasan }}</td>
                             <td>{{ l.kapasitas|default:"-" }}</td>
@@ -62,12 +83,36 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-5">Belum ada data kemasan</td>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                {% if q %}Tidak ada hasil untuk "{{ q }}"{% else %}Belum ada data kemasan{% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+
+            {% if page_obj.has_other_pages %}
+            <nav class="mt-4 d-flex justify-content-center">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page=1{% if q %}&q={{ q }}{% endif %}">&laquo;</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">Prev</a></li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}">Next</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}">&raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
         </div>
     </div>
 </div>

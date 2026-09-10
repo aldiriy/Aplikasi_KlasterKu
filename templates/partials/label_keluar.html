@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-arrow-up text-danger me-2"></i>Label Keluar
+                    </h5>
+                    <p class="text-muted mb-1">{{ label.nama_label }} (<code>{{ label.kode_label }}</code>)</p>
+                    <p class="mb-4">
+                        Stok saat ini:
+                        <strong class="{% if label.stok_total <= 0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ label.stok_total }} {{ label.satuan }}
+                        </strong>
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Qty Keluar <span class="text-danger">*</span></label>
+                            <input type="number" name="qty" class="form-control form-control-lg"
+                                   step="0.01" min="0.01" max="{{ label.stok_total }}" required autofocus>
+                            <div class="form-text">Maksimal: {{ label.stok_total }} {{ label.satuan }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Referensi (No. Order / Customer)</label>
+                            <input type="text" name="referensi" class="form-control"
+                                   placeholder="Contoh: SO-2026-001">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Keterangan</label>
+                            <input type="text" name="keterangan" class="form-control" placeholder="Opsional">
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger rounded-pill px-4">
+                                <i class="fas fa-check me-1"></i> Proses Keluar
+                            </button>
+                            <a href="{% url 'detail_label' label.id %}" class="btn btn-outline-secondary rounded-pill px-4">Batal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

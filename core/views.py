@@ -7,12 +7,17 @@ from django.conf import settings
 from django.contrib import messages
 from django.db.models import Sum, Q
 from django.utils import timezone
-from datetime import date
 from django.shortcuts import redirect
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from django.db import transaction
+from django.core.paginator import Paginator
+from django.db.models import Q, Sum
+from datetime import date, timedelta
+from functools import wraps
+from .decorators import role_required
+
 
 from .models import (
     Customer, UploadHistory, Barang, KategoriBarang, BatchBarang, TransaksiBarang,
@@ -65,6 +70,22 @@ def dashboard(request):
         .order_by("stok_total")[:5]
     )
 
+    # Stok menipis Label
+    label_menipis = (
+        Label.objects
+        .filter(stok_total__lte=F("stok_minimum"))
+        .exclude(stok_minimum=0)
+        .order_by("stok_total")[:5]
+    )
+
+    # Stok menipis Kemasan
+    kemasan_menipis = (
+        Kemasan.objects
+        .filter(stok_total__lte=F("stok_minimum"))
+        .exclude(stok_minimum=0)
+        .order_by("stok_total")[:5]
+    )
+
     # Batch hampir / sudah expired (30 hari ke depan)
     batas_expired = date.today() + timedelta(days=30)
     batch_expired = (
@@ -77,6 +98,7 @@ def dashboard(request):
         .select_related("barang")
         .order_by("tanggal_expired")[:5]
     )
+    
 
     # Clustering terakhir
     last_clustering = (
@@ -88,6 +110,7 @@ def dashboard(request):
 
     # Barang stok paling sedikit (untuk carousel)
     barang_tersedikit = Barang.objects.order_by("stok_total").first()
+
 
     # =========================
     # DATA DARI SESSION + FILE
@@ -105,6 +128,8 @@ def dashboard(request):
         "batch_expired": batch_expired,
         "last_clustering": last_clustering,
         "barang_tersedikit": barang_tersedikit,
+        "label_menipis": label_menipis,
+        "kemasan_menipis": kemasan_menipis,
 
         # Default dari file/session
         "total_customer": 0,
@@ -115,6 +140,7 @@ def dashboard(request):
         "total_cluster": 0,
         "silhouette_score": "-",
         "last_upload": "Belum ada file",
+        "today": date.today(),
 
         "top_sales": {},
         "top_customers": {},
@@ -980,11 +1006,27 @@ def change_password(request):
 
 @login_required
 def master_customer(request):
+    q = request.GET.get("q", "").strip()
     customers = Customer.objects.all().order_by("nama_customer")
-    return render(request, "partials/master_customer.html", {
-        "customers": customers
-    })
 
+    if q:
+        customers = customers.filter(
+            Q(nama_customer__icontains=q) |
+            Q(area__icontains=q) |
+            Q(no_telp__icontains=q) |
+            Q(email__icontains=q)
+        )
+
+    paginator = Paginator(customers, 15)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "partials/master_customer.html", {
+        "customers": page_obj,
+        "page_obj": page_obj,
+        "q": q,
+        "total_count": paginator.count,
+    })
 
 @login_required
 def tambah_customer(request):
@@ -1156,9 +1198,25 @@ def profile(request):
 
 @login_required
 def master_barang(request):
+    q = request.GET.get("q", "").strip()
     barangs = Barang.objects.select_related("kategori").all().order_by("nama_barang")
+
+    if q:
+        barangs = barangs.filter(
+            Q(kode_barang__icontains=q) |
+            Q(nama_barang__icontains=q) |
+            Q(kategori__nama__icontains=q)
+        )
+
+    paginator = Paginator(barangs, 15)  # 15 data per halaman
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     return render(request, "partials/master_barang.html", {
-        "barangs": barangs
+        "barangs": page_obj,
+        "page_obj": page_obj,
+        "q": q,
+        "total_count": paginator.count,
     })
 
 
@@ -1261,40 +1319,51 @@ def hapus_barang(request, pk):
 
 @login_required
 def barang_masuk(request, pk):
-    """Tambah stok (buat batch baru)"""
     barang = get_object_or_404(Barang, pk=pk)
 
     if request.method == "POST":
-        qty = float(request.POST.get("qty") or 0)
+        try:
+            qty = float(request.POST.get("qty") or 0)
+        except (TypeError, ValueError):
+            messages.error(request, "Qty tidak valid.")
+            return redirect("barang_masuk", pk=pk)
+
         tanggal = request.POST.get("tanggal") or date.today().isoformat()
-        keterangan = request.POST.get("keterangan", "")
+        tanggal_expired = request.POST.get("tanggal_expired") or None
+        keterangan = request.POST.get("keterangan", "").strip()
 
         if qty <= 0:
             messages.error(request, "Qty harus lebih dari 0.")
             return redirect("barang_masuk", pk=pk)
 
-        BatchBarang.objects.create(
-            barang=barang,
-            tanggal_masuk=tanggal,
-            qty_masuk=qty,
-            qty_keluar=0,
-            sisa=qty,
-            keterangan=keterangan or "Barang masuk"
-        )
-        TransaksiBarang.objects.create(
-            barang=barang,
-            tipe="MASUK",
-            qty=qty,
-            tanggal=tanggal,
-            keterangan=keterangan or "Barang masuk",
-            created_by=request.user
-        )
+        try:
+            with transaction.atomic():
+                BatchBarang.objects.create(
+                    barang=barang,
+                    tanggal_masuk=tanggal,
+                    qty_masuk=qty,
+                    qty_keluar=0,
+                    sisa=qty,
+                    tanggal_expired=tanggal_expired if tanggal_expired else None,
+                    keterangan=keterangan or "Barang masuk",
+                )
+                TransaksiBarang.objects.create(
+                    barang=barang,
+                    tipe="MASUK",
+                    qty=qty,
+                    tanggal=tanggal,
+                    keterangan=keterangan or "Barang masuk",
+                    created_by=request.user,
+                )
+            messages.success(request, f"Berhasil menambah stok {qty} {barang.satuan}.")
+        except Exception as e:
+            messages.error(request, f"Gagal: {str(e)}")
 
-        messages.success(request, f"Berhasil menambah stok {qty} {barang.satuan}.")
-        return redirect("master_barang")
+        return redirect("detail_barang", pk=pk)
 
     return render(request, "partials/barang_masuk.html", {
-        "barang": barang
+        "barang": barang,
+        "today": date.today().isoformat(),
     })
 
 
@@ -1434,8 +1503,26 @@ def kurangi_stok_kemasan(kemasan, qty_dibutuhkan, tanggal=None, keterangan="", r
 
 @login_required
 def master_label(request):
+    q = request.GET.get("q", "").strip()
     labels = Label.objects.all().order_by("nama_label")
-    return render(request, "partials/master_label.html", {"labels": labels})
+
+    if q:
+        labels = labels.filter(
+            Q(kode_label__icontains=q) |
+            Q(nama_label__icontains=q) |
+            Q(gramasi__icontains=q)
+        )
+
+    paginator = Paginator(labels, 15)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "partials/master_label.html", {
+        "labels": page_obj,
+        "page_obj": page_obj,
+        "q": q,
+        "total_count": paginator.count,
+    })
 
 
 @login_required
@@ -1696,16 +1783,25 @@ def upload_label(request):
 
 @login_required
 def master_kemasan(request):
+    q = request.GET.get("q", "").strip()
     kemasans = Kemasan.objects.all().order_by("nama_kemasan")
-    
-    print("===== DEBUG MASTER KEMASAN =====")
-    print("Jumlah data:", kemasans.count())
-    for k in kemasans:
-        print(k.id, k.kode_kemasan, k.nama_kemasan, k.stok_total)
-    print("================================")
-    
-    return render(request, "partials/master_kemasan.html", {"kemasans": kemasans})
 
+    if q:
+        kemasans = kemasans.filter(
+            Q(kode_kemasan__icontains=q) |
+            Q(nama_kemasan__icontains=q)
+        )
+
+    paginator = Paginator(kemasans, 15)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "partials/master_kemasan.html", {
+        "kemasans": page_obj,
+        "page_obj": page_obj,
+        "q": q,
+        "total_count": paginator.count,
+    })
 
 @login_required
 def tambah_kemasan(request):
@@ -2701,3 +2797,274 @@ def barang_keluar(request, pk):
         return redirect("detail_barang", pk=pk)
 
     return render(request, "partials/barang_keluar.html", {"barang": barang})
+
+    # ==========================================================
+# EXPORT EXCEL MASTER DATA
+# ==========================================================
+@login_required
+def export_master_barang(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Master Barang"
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="2563EB")
+    thin = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin")
+    )
+
+    headers = ["No", "Kode Barang", "Nama Barang", "Kategori", "Satuan", "Metode", "Stok Total", "Stok Minimum"]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin
+
+    barangs = Barang.objects.select_related("kategori").order_by("nama_barang")
+    for i, b in enumerate(barangs, 1):
+        row = [
+            i,
+            b.kode_barang,
+            b.nama_barang,
+            b.kategori.nama if b.kategori else "-",
+            b.satuan,
+            b.metode,
+            b.stok_total,
+            getattr(b, "stok_minimum", 0),
+        ]
+        for col, val in enumerate(row, 1):
+            cell = ws.cell(row=i + 1, column=col, value=val)
+            cell.border = thin
+
+    for col in range(1, 9):
+        ws.column_dimensions[get_column_letter(col)].width = 18
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="Master_Barang.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+def export_master_label(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Master Label"
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="16A34A")
+    thin = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin")
+    )
+
+    headers = ["No", "Kode Label", "Nama Label", "Gramasi", "Satuan", "Metode", "Stok Total", "Stok Minimum"]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin
+
+    labels = Label.objects.all().order_by("nama_label")
+    for i, l in enumerate(labels, 1):
+        row = [
+            i, l.kode_label, l.nama_label, l.gramasi or "-",
+            l.satuan, l.metode, l.stok_total, getattr(l, "stok_minimum", 0)
+        ]
+        for col, val in enumerate(row, 1):
+            cell = ws.cell(row=i + 1, column=col, value=val)
+            cell.border = thin
+
+    for col in range(1, 9):
+        ws.column_dimensions[get_column_letter(col)].width = 18
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="Master_Label.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required
+def export_master_kemasan(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Master Kemasan"
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="F59E0B")
+    thin = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin")
+    )
+
+    headers = ["No", "Kode Kemasan", "Nama Kemasan", "Kapasitas", "Satuan", "Metode", "Stok Total", "Stok Minimum"]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border = thin
+
+    kemasans = Kemasan.objects.all().order_by("nama_kemasan")
+    for i, k in enumerate(kemasans, 1):
+        row = [
+            i, k.kode_kemasan, k.nama_kemasan, getattr(k, "kapasitas", None) or "-",
+            k.satuan, k.metode, k.stok_total, getattr(k, "stok_minimum", 0)
+        ]
+        for col, val in enumerate(row, 1):
+            cell = ws.cell(row=i + 1, column=col, value=val)
+            cell.border = thin
+
+    for col in range(1, 9):
+        ws.column_dimensions[get_column_letter(col)].width = 18
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="Master_Kemasan.xlsx"'
+    wb.save(response)
+    return response
+
+    # ==========================================================
+# LABEL KELUAR
+# ==========================================================
+@login_required
+def label_keluar(request, pk):
+    label = get_object_or_404(Label, pk=pk)
+
+    if request.method == "POST":
+        try:
+            qty = float(request.POST.get("qty", 0))
+        except (TypeError, ValueError):
+            messages.error(request, "Qty tidak valid")
+            return redirect("detail_label", pk=pk)
+
+        keterangan = request.POST.get("keterangan", "").strip()
+        referensi = request.POST.get("referensi", "").strip()
+
+        if qty <= 0:
+            messages.error(request, "Qty harus lebih dari 0")
+            return redirect("detail_label", pk=pk)
+
+        if qty > label.stok_total:
+            messages.error(request, f"Stok tidak mencukupi. Tersedia: {label.stok_total} {label.satuan}")
+            return redirect("detail_label", pk=pk)
+
+        try:
+            with transaction.atomic():
+                if label.metode == "LIFO":
+                    batches = label.batches.filter(sisa__gt=0).order_by("-tanggal_masuk", "-id")
+                else:
+                    batches = label.batches.filter(sisa__gt=0).order_by("tanggal_masuk", "id")
+
+                sisa_keluar = qty
+                for batch in batches:
+                    if sisa_keluar <= 0:
+                        break
+                    ambil = min(batch.sisa, sisa_keluar)
+                    batch.qty_keluar += ambil
+                    batch.save()
+                    sisa_keluar -= ambil
+
+                if sisa_keluar > 0:
+                    raise Exception("Stok batch tidak mencukupi")
+
+                TransaksiLabel.objects.create(
+                    label=label,
+                    tipe="KELUAR",
+                    qty=qty,
+                    tanggal=date.today(),
+                    keterangan=keterangan,
+                    referensi=referensi,
+                    created_by=request.user
+                )
+
+            messages.success(request, f"Berhasil keluar {qty} {label.satuan}")
+        except Exception as e:
+            messages.error(request, f"Gagal proses keluar: {str(e)}")
+
+        return redirect("detail_label", pk=pk)
+
+    return render(request, "partials/label_keluar.html", {"label": label})
+
+
+# ==========================================================
+# KEMASAN KELUAR
+# ==========================================================
+@login_required
+def kemasan_keluar(request, pk):
+    kemasan = get_object_or_404(Kemasan, pk=pk)
+
+    if request.method == "POST":
+        try:
+            qty = float(request.POST.get("qty", 0))
+        except (TypeError, ValueError):
+            messages.error(request, "Qty tidak valid")
+            return redirect("detail_kemasan", pk=pk)
+
+        keterangan = request.POST.get("keterangan", "").strip()
+        referensi = request.POST.get("referensi", "").strip()
+
+        if qty <= 0:
+            messages.error(request, "Qty harus lebih dari 0")
+            return redirect("detail_kemasan", pk=pk)
+
+        if qty > kemasan.stok_total:
+            messages.error(request, f"Stok tidak mencukupi. Tersedia: {kemasan.stok_total} {kemasan.satuan}")
+            return redirect("detail_kemasan", pk=pk)
+
+        try:
+            with transaction.atomic():
+                if kemasan.metode == "LIFO":
+                    batches = kemasan.batches.filter(sisa__gt=0).order_by("-tanggal_masuk", "-id")
+                else:
+                    batches = kemasan.batches.filter(sisa__gt=0).order_by("tanggal_masuk", "id")
+
+                sisa_keluar = qty
+                for batch in batches:
+                    if sisa_keluar <= 0:
+                        break
+                    ambil = min(batch.sisa, sisa_keluar)
+                    batch.qty_keluar += ambil
+                    batch.save()
+                    sisa_keluar -= ambil
+
+                if sisa_keluar > 0:
+                    raise Exception("Stok batch tidak mencukupi")
+
+                TransaksiKemasan.objects.create(
+                    kemasan=kemasan,
+                    tipe="KELUAR",
+                    qty=qty,
+                    tanggal=date.today(),
+                    keterangan=keterangan,
+                    referensi=referensi,
+                    created_by=request.user
+                )
+
+            messages.success(request, f"Berhasil keluar {qty} {kemasan.satuan}")
+        except Exception as e:
+            messages.error(request, f"Gagal proses keluar: {str(e)}")
+
+        return redirect("detail_kemasan", pk=pk)
+
+    return render(request, "partials/kemasan_keluar.html", {"kemasan": kemasan})
+
+def role_required(*roles):
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped(request, *args, **kwargs):
+            user_role = getattr(request.user, "role", "ADMIN")
+            if request.user.is_superuser or user_role in roles:
+                return view_func(request, *args, **kwargs)
+            messages.error(request, "Anda tidak memiliki akses ke halaman ini.")
+            return redirect("dashboard")
+        return _wrapped
+    return decorator

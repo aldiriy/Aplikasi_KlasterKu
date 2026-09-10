@@ -5,10 +5,17 @@ from django.conf import settings
 from django.db.models import Sum
 
 
+
 # ==========================================================
 # CUSTOM USER
 # ==========================================================
 class CustomUser(AbstractUser):
+    ROLE_CHOICES = [
+        ("ADMIN", "Admin"),
+        ("GUDANG", "Gudang"),
+        ("SALES", "Sales"),
+    ]
+
     foto_profil = models.ImageField(
         upload_to="profil/",
         default="default.jpg",
@@ -19,12 +26,15 @@ class CustomUser(AbstractUser):
     alamat = models.TextField(blank=True)
     jabatan = models.CharField(max_length=100, blank=True)
     tanggal_lahir = models.DateField(blank=True, null=True)
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default="ADMIN",
+    )
     is_profile_complete = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username
-
-
 # ==========================================================
 # CUSTOMER
 # ==========================================================

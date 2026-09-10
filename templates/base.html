@@ -217,7 +217,7 @@
     <div class="sidebar-menu">
         <ul id="mainMenu">
             <li class="main-menu-item">
-                <a href="{% url 'master_customer' %}"><i class="bi bi-people-fill"></i> Data Pelanggan</a>
+                <a href="{% url 'dashboard' %}"><i class="bi bi-house-fill"></i> Dashboard</a>
             </li>
             <li class="main-menu-item">
                 <a href="{% url 'upload_data' %}"><i class="bi bi-receipt"></i> Transaksi</a>
@@ -368,6 +368,41 @@
             <a href="{% url 'profile' %}" class="btn btn-warning btn-sm">Lengkapi Profil</a>
         </div>
         {% endif %}
+
+        {% if label_menipis or kemasan_menipis %}
+    <div class="row g-3 mb-4">
+        {% if label_menipis %}
+        <div class="col-md-6">
+        <div class="alert alert-warning border-0 shadow-sm h-100 mb-0">
+            <h6 class="fw-bold mb-2"><i class="fas fa-tags me-2"></i>Stok Label Menipis</h6>
+            <ul class="mb-0 small">
+                {% for l in label_menipis %}
+                <li>
+                    <a href="{% url 'detail_label' l.id %}">{{ l.nama_label }}</a>
+                    — Sisa: <strong>{{ l.stok_total }}</strong> (Min: {{ l.stok_minimum }})
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+    {% if kemasan_menipis %}
+    <div class="col-md-6">
+        <div class="alert alert-warning border-0 shadow-sm h-100 mb-0">
+            <h6 class="fw-bold mb-2"><i class="fas fa-box me-2"></i>Stok Kemasan Menipis</h6>
+            <ul class="mb-0 small">
+                {% for k in kemasan_menipis %}
+                <li>
+                    <a href="{% url 'detail_kemasan' k.id %}">{{ k.nama_kemasan }}</a>
+                    — Sisa: <strong>{{ k.stok_total }}</strong> (Min: {{ k.stok_minimum }})
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        </div>
+            {% endif %}
+        </div>
+            {% endif %}
 
         <!-- SLIDER AUTO-SLIDE (TANPA PANAH) MENARIK DATA MASTER BARANG -->
         <div id="dashboardCarousel" class="carousel slide mb-4 shadow-sm" data-bs-ride="carousel" data-bs-interval="4000" style="border-radius: 16px; overflow: hidden;">
