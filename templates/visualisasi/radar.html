@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            <i class="bi bi-radar text-primary me-2"></i>Radar Chart Cluster
+        </h4>
+        <p class="text-muted mb-0">Karakteristik tiap cluster berdasarkan fitur utama</p>
+    </div>
+</div>
+
+{% if not has_data %}
+<div class="alert alert-warning">
+    Belum ada hasil clustering.
+    <a href="{% url 'run_clustering' %}" class="btn btn-sm btn-warning ms-2">Jalankan Clustering</a>
+</div>
+{% else %}
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <div style="max-width: 620px; margin: 0 auto; height: 400px; position: relative;">
+            <canvas id="radarChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Penjelasan -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 pt-3 px-4">
+        <h6 class="fw-semibold mb-0">
+            <i class="bi bi-lightbulb text-warning me-2"></i>Penjelasan Radar Chart
+        </h6>
+    </div>
+    <div class="card-body px-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <h6 class="fw-semibold text-success">Cluster Tinggi</h6>
+                    <p class="small text-muted mb-0">
+                        Memiliki skor tinggi di Frequency, Monetary, Qty, dan Loyalty. 
+                        Ini adalah pelanggan paling berharga.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <h6 class="fw-semibold text-info">Cluster Sedang</h6>
+                    <p class="small text-muted mb-0">
+                        Skor menengah di hampir semua fitur. 
+                        Berpotensi naik ke cluster tinggi dengan strategi yang tepat.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <h6 class="fw-semibold text-warning">Cluster Rendah</h6>
+                    <p class="small text-muted mb-0">
+                        Skor rendah di Frequency & Monetary, tapi Recency tinggi 
+                        (sudah lama tidak bertransaksi). Perlu reaktivasi.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const labels = {{ radar_labels|safe }};
+    const datasetsFromBackend = {{ radar_datasets|safe }};
+
+    if (!datasetsFromBackend || datasetsFromBackend.length === 0) return;
+
+    const datasets = datasetsFromBackend.map(ds => ({
+        label: ds.label,
+        data: ds.data,
+        backgroundColor: ds.backgroundColor,
+        borderColor: ds.borderColor,
+        borderWidth: 2,
+        pointBackgroundColor: ds.borderColor
+    }));
+
+    new Chart(document.getElementById('radarChart'), {
+        type: 'radar',
+        data: { labels: labels, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { stepSize: 20 }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, padding: 14 }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

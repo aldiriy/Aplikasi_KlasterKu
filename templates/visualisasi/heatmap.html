@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            <i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>Heatmap Korelasi Fitur
+        </h4>
+        <p class="text-muted mb-0">Matriks korelasi antar fitur pelanggan</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle mb-0" id="heatmapTable">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:18%"></th>
+                        <th>Recency</th>
+                        <th>Frequency</th>
+                        <th>Monetary</th>
+                        <th>Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th class="table-light">Recency</th>
+                        <td class="hm" data-val="1.00">1.00</td>
+                        <td class="hm" data-val="-0.45">-0.45</td>
+                        <td class="hm" data-val="-0.41">-0.41</td>
+                        <td class="hm" data-val="-0.38">-0.38</td>
+                    </tr>
+                    <tr>
+                        <th class="table-light">Frequency</th>
+                        <td class="hm" data-val="-0.45">-0.45</td>
+                        <td class="hm" data-val="1.00">1.00</td>
+                        <td class="hm" data-val="0.78">0.78</td>
+                        <td class="hm" data-val="0.82">0.82</td>
+                    </tr>
+                    <tr>
+                        <th class="table-light">Monetary</th>
+                        <td class="hm" data-val="-0.41">-0.41</td>
+                        <td class="hm" data-val="0.78">0.78</td>
+                        <td class="hm" data-val="1.00">1.00</td>
+                        <td class="hm" data-val="0.91">0.91</td>
+                    </tr>
+                    <tr>
+                        <th class="table-light">Qty</th>
+                        <td class="hm" data-val="-0.38">-0.38</td>
+                        <td class="hm" data-val="0.82">0.82</td>
+                        <td class="hm" data-val="0.91">0.91</td>
+                        <td class="hm" data-val="1.00">1.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Penjelasan -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 pt-3 px-4">
+        <h6 class="fw-semibold mb-0">
+            <i class="bi bi-lightbulb text-warning me-2"></i>Penjelasan Heatmap
+        </h6>
+    </div>
+    <div class="card-body px-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <h6 class="fw-semibold text-success">Korelasi Positif (Hijau)</h6>
+                    <p class="small text-muted mb-0">
+                        Semakin tinggi nilai Frequency, semakin tinggi juga Monetary dan Qty. 
+                        Pelanggan yang sering beli cenderung belanja lebih besar.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <h6 class="fw-semibold text-danger">Korelasi Negatif (Merah)</h6>
+                    <p class="small text-muted mb-0">
+                        Recency berkorelasi negatif dengan fitur lain. 
+                        Semakin lama pelanggan tidak bertransaksi, semakin rendah frekuensi & nilai belanjanya.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <h6 class="fw-semibold">Kesimpulan</h6>
+                    <p class="small text-muted mb-0">
+                        Fitur Frequency, Monetary, dan Qty sangat saling berhubungan. 
+                        Cocok digunakan bersama dalam proses clustering.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #heatmapTable .hm { color: #fff; font-weight: 600; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.hm').forEach(function (cell) {
+        const val = parseFloat(cell.dataset.val);
+        let r, g, b;
+        if (val >= 0) {
+            r = Math.round(220 - val * 180);
+            g = Math.round(100 + val * 120);
+            b = Math.round(100 - val * 60);
+        } else {
+            const abs = Math.abs(val);
+            r = Math.round(180 + abs * 75);
+            g = Math.round(100 - abs * 70);
+            b = Math.round(100 - abs * 70);
+        }
+        cell.style.backgroundColor = `rgb(${r},${g},${b})`;
+    });
+});
+</script>
+{% endblock %}

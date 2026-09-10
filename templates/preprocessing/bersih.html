@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            <i class="bi bi-brush text-primary me-2"></i>Pembersihan Data
+        </h4>
+        <p class="text-muted mb-0">Analisis kualitas data sebelum clustering</p>
+    </div>
+</div>
+
+{% if not has_file %}
+<div class="alert alert-warning border-0 shadow-sm">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Belum ada dataset yang diupload.
+    <a href="{% url 'upload_data' %}" class="btn btn-sm btn-warning ms-3">Upload Dataset</a>
+</div>
+{% else %}
+
+<!-- Info File -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="text-muted small">Nama File</div>
+                <div class="fw-semibold text-truncate">{{ filename }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Baris</div>
+                <div class="fs-4 fw-bold">{{ total_rows }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="text-muted small">Nilai Kosong</div>
+                <div class="fs-4 fw-bold {% if null_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                    {{ null_count }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="text-muted small">Data Duplikat</div>
+                <div class="fs-4 fw-bold {% if duplicate_count > 0 %}text-warning{% else %}text-success{% endif %}">
+                    {{ duplicate_count }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Data -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-transparent border-0 pt-3 px-4">
+        <h6 class="fw-semibold mb-0">Preview Data (8 baris pertama)</h6>
+    </div>
+    <div class="card-body px-4">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        {% for col in columns %}
+                        <th>{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in preview %}
+                <tr>
+                    {% for val in row %}
+                    <td>{{ val }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Penjelasan -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 pt-3 px-4">
+        <h6 class="fw-semibold mb-0">
+            <i class="bi bi-lightbulb text-warning me-2"></i>Rekomendasi Pembersihan
+        </h6>
+    </div>
+    <div class="card-body px-4">
+        <ul class="mb-0">
+            {% if null_count > 0 %}
+            <li>Terdapat <strong>{{ null_count }}</strong> nilai kosong. Disarankan dihapus atau diisi nilai rata-rata.</li>
+            {% else %}
+            <li class="text-success">Tidak ditemukan nilai kosong. Data sudah bersih.</li>
+            {% endif %}
+
+            {% if duplicate_count > 0 %}
+            <li>Terdapat <strong>{{ duplicate_count }}</strong> baris duplikat. Disarankan dihapus.</li>
+            {% else %}
+            <li class="text-success">Tidak ditemukan data duplikat.</li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

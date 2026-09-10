@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            <i class="bi bi-graph-up text-primary me-2"></i>Scatter Plot Clustering
+        </h4>
+        <p class="text-muted mb-0">Sebaran pelanggan berdasarkan fitur utama</p>
+    </div>
+</div>
+
+{% if not has_data %}
+<div class="alert alert-warning">
+    Belum ada hasil clustering.
+    <a href="{% url 'run_clustering' %}" class="btn btn-sm btn-warning ms-2">Jalankan Clustering</a>
+</div>
+{% else %}
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <div style="height: 400px; position: relative;">
+            <canvas id="scatterChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Penjelasan -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-0 pt-3 px-4">
+        <h6 class="fw-semibold mb-0">
+            <i class="bi bi-lightbulb text-warning me-2"></i>Penjelasan Scatter Plot
+        </h6>
+    </div>
+    <div class="card-body px-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div style="width:12px;height:12px;border-radius:50%;background:#16a34a"></div>
+                        <strong>Cluster Tinggi</strong>
+                    </div>
+                    <p class="small text-muted mb-0">
+                        Titik berada di kanan atas (Monetary & Frequency tinggi). 
+                        Ini adalah pelanggan terbaik yang harus dipertahankan.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div style="width:12px;height:12px;border-radius:50%;background:#0ea5e9"></div>
+                        <strong>Cluster Sedang</strong>
+                    </div>
+                    <p class="small text-muted mb-0">
+                        Titik berada di tengah. Pelanggan potensial yang bisa ditingkatkan 
+                        melalui upselling dan campaign rutin.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded-3 p-3 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div style="width:12px;height:12px;border-radius:50%;background:#f59e0b"></div>
+                        <strong>Cluster Rendah</strong>
+                    </div>
+                    <p class="small text-muted mb-0">
+                        Titik berada di kiri bawah. Perlu strategi reaktivasi 
+                        atau penawaran khusus agar kembali aktif.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const data = {{ scatter_data|safe }};
+
+    new Chart(document.getElementById('scatterChart'), {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Cluster Tinggi',
+                    data: data.tinggi || [],
+                    backgroundColor: '#16a34a',
+                    pointRadius: 6
+                },
+                {
+                    label: 'Cluster Sedang',
+                    data: data.sedang || [],
+                    backgroundColor: '#0ea5e9',
+                    pointRadius: 6
+                },
+                {
+                    label: 'Cluster Rendah',
+                    data: data.rendah || [],
+                    backgroundColor: '#f59e0b',
+                    pointRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, padding: 16 }
+                }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Monetary / Total Omzet' } },
+                y: { title: { display: true, text: 'Frequency / Frekuensi' } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

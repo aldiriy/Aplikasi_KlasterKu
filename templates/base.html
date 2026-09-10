@@ -1,531 +1,580 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>KlasterKu | PT Sinar Multi Kemindo</title>
     
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Fontawesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-    :root{
-        --sidebar:#123458;
-        --sidebar-hover:#1f4f80;
-        --primary:#2563eb;
-        --success:#16a34a;
-        --warning:#f59e0b;
-        --danger:#dc2626;
-        --info:#0ea5e9;
-        --body:#f5f7fb;
-        --card:#ffffff;
-        --text:#334155;
+    :root, [data-theme="light"] {
+        --sidebar-bg: #0f2c59;
+        --primary: #2563eb;
+        --body: #f1f5f9;
+        --card-bg: #ffffff;
+        --text: #1e293b;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
     }
 
-    body{
-        background:var(--body);
-        font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;
-        overflow-x:hidden;
+    [data-theme="dark"] {
+        --sidebar-bg: #0b1a33;
+        --primary: #3b82f6;
+        --body: #0f172a;
+        --card-bg: #1e293b;
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+        --border: #334155;
     }
 
-    .sidebar{
-        position:fixed;
-        left:0;
-        top:0;
-        width:270px;
-        height:100vh;
-        background:linear-gradient(180deg,#123458,#0d2740);
-        color:white;
-        z-index:1000;
-        overflow-y:auto;
-        transition:.3s;
-        box-shadow:0 0 20px rgba(0,0,0,.2);
+    body {
+        background: var(--body);
+        color: var(--text);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        overflow-x: hidden;
+        margin: 0;
+        transition: background 0.3s, color 0.3s;
     }
 
-    .sidebar-header{
-        padding:30px 20px;
-        text-align:center;
-        border-bottom:1px solid rgba(255,255,255,.1);
+    .sidebar {
+        position: fixed;
+        left: 0; top: 0;
+        width: 260px; height: 100vh;
+        background: var(--sidebar-bg);
+        color: white;
+        z-index: 1000;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        transition: 0.3s;
     }
 
-    .sidebar-header img{
-        width:80px;
-        height:80px;
-        border-radius:50%;
-        background:white;
-        padding:8px;
-        box-shadow:0 5px 15px rgba(0,0,0,.3);
+    .sidebar-header {
+        padding: 20px 16px 16px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        cursor: pointer;
     }
 
-    .sidebar ul{
-        padding:15px;
-        list-style:none;
+    .sidebar-header img {
+        width: 68px; height: 68px;
+        object-fit: contain;
+        border-radius: 14px;
+        background: white;
+        padding: 7px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     }
 
-    .sidebar ul li{
-        margin-bottom:8px;
+    .sidebar-header h4 { margin: 10px 0 2px; font-size: 1.2rem; font-weight: 700; }
+    .sidebar-header p { margin: 0; font-size: 11.5px; opacity: 0.75; }
+
+    .sidebar-menu { padding: 12px 10px; flex: 1; }
+    .sidebar-menu ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar-menu li { margin-bottom: 3px; }
+
+    .sidebar-menu a {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 11px 14px;
+        border-radius: 10px;
+        color: rgba(255,255,255,0.9);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
     }
 
-    .sidebar ul li a{
-        display:block;
-        padding:13px 18px;
-        border-radius:12px;
-        text-decoration:none;
-        color:white;
-        transition:.3s;
-        font-size:15px;
+    .sidebar-menu a i { font-size: 17px; width: 22px; text-align: center; }
+    .sidebar-menu a:hover { background: rgba(255,255,255,0.1); color: white; }
+    .sidebar-menu a.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.4);
     }
 
-    .sidebar ul li a:hover{
-        background:rgba(255,255,255,.15);
-        padding-left:24px;
+    .menu-parent { justify-content: space-between !important; cursor: pointer; }
+    .menu-parent .chevron { font-size: 11px; transition: transform 0.25s; opacity: 0.7; }
+    .menu-parent[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+
+    .submenu { list-style: none; padding: 3px 0 6px 6px; margin: 0; }
+    .submenu a {
+        padding: 9px 12px 9px 38px !important;
+        font-size: 13.2px;
+        position: relative;
+    }
+    .submenu a::before {
+        content: "";
+        position: absolute;
+        left: 22px; top: 50%;
+        transform: translateY(-50%);
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.35);
+    }
+    .submenu a:hover { background: rgba(255,255,255,0.08) !important; }
+    .submenu a.active { background: rgba(37,99,235,0.85) !important; }
+    .submenu a.active::before { background: white; }
+
+    .sidebar-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.12);
+        margin: 10px 6px;
     }
 
-    .sidebar ul li a.active{
-        background:#0ea5e9;
+    .sidebar-footer {
+        padding: 12px 14px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        font-size: 12px;
+        opacity: 0.7;
+        text-align: center;
     }
 
-    .main{
-        margin-left:270px;
-        min-height:100vh;
+    /* Focus Mode */
+    .focus-header {
+        display: none;
+        padding: 12px 14px;
+        background: rgba(0,0,0,0.25);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .focus-header a {
+        color: white;
+        text-decoration: none;
+        font-size: 13.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
-    .topbar{
-        background:white;
-        padding:18px 30px;
-        box-shadow:0 3px 12px rgba(0,0,0,.05);
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        position:sticky;
-        top:0;
-        z-index:900;
+    .main {
+        margin-left: 260px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
     }
 
-    .card{
-        border:none;
-        border-radius:18px;
-        box-shadow:0 10px 20px rgba(0,0,0,.06);
-        transition:.3s;
+    .topbar {
+        background: var(--card-bg);
+        padding: 13px 26px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.3s;
     }
 
-    .card:hover{
-        transform:translateY(-5px);
+    .content-wrapper { padding: 22px 26px; flex: 1; }
+
+    .card {
+        border: none;
+        border-radius: 14px;
+        background: var(--card-bg);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        color: var(--text);
+        transition: background 0.3s;
     }
 
-    .btn{
-        border-radius:12px;
-        transition: all 0.3s;
+    footer {
+        background: var(--card-bg);
+        border-top: 1px solid var(--border);
+        padding: 12px 26px;
+        font-size: 13px;
+        color: var(--text-muted);
     }
 
-    ::-webkit-scrollbar{
-        width:8px;
-    }
-
-    ::-webkit-scrollbar-thumb{
-        background:#0ea5e9;
-        border-radius:20px;
-    }
-
-    @media(max-width:991px){
-        .sidebar{ left:-270px; }
-        .sidebar.show{ left:0; }
-        .main{ margin-left:0; }
+    @media (max-width: 991px) {
+        .sidebar { left: -260px; }
+        .sidebar.show { left: 0; }
+        .main { margin-left: 0; }
     }
     </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <img src="{% static 'images/klasterku.png' %}">
-        <h4>KLASTERKU</h4>
-        <p>Customer Segmentation System</p>
+    <div class="sidebar-header" onclick="window.location.href='{% url 'dashboard' %}'" title="Kembali ke Dashboard">
+        <img src="{% static 'images/klasterku.png' %}" alt="KlasterKu">
+        <h4>KlasterKu</h4>
+        <p>Sistem Segmentasi Pelanggan</p>
     </div>
 
-    <ul>
-{% if request.user.is_profile_complete %}
-<li>
-    <a href="{% url 'dashboard' %}">
-        <i class="bi bi-grid-fill"></i> Dashboard
-    </a>
-</li>
-{% else %}
-<li>
-    <a href="#" class="locked-menu">
-        <i class="bi bi-grid-fill"></i> Dashboard
-        <i class="fas fa-lock text-warning float-end"></i>
-    </a>
-</li>
-{% endif %}        
+    <div class="focus-header" id="focusHeader">
+        <a href="javascript:void(0)" onclick="exitFocusMode()">
+            <i class="bi bi-arrow-left"></i> Kembali ke Menu Utama
+        </a>
+    </div>
 
-{% if request.user.is_profile_complete %}
-<li>
-    <a href="{% url 'upload_data' %}">
-        <i class="bi bi-upload"></i> Upload Dataset
-    </a>
-</li>
-{% else %}
-<li>
-    <a href="#" class="locked-menu">
-        <i class="bi bi-upload"></i> Upload Dataset
-        <i class="fas fa-lock text-warning float-end"></i>
-    </a>
-</li>
-{% endif %}
+    <div class="sidebar-menu">
+        <ul id="mainMenu">
+            <li class="main-menu-item">
+                <a href="{% url 'master_customer' %}"><i class="bi bi-people-fill"></i> Data Pelanggan</a>
+            </li>
+            <li class="main-menu-item">
+                <a href="{% url 'upload_data' %}"><i class="bi bi-receipt"></i> Transaksi</a>
+            </li>
 
-{% if request.user.is_profile_complete %}
-<li>
-    <a href="{% url 'run_clustering' %}">
-        <i class="bi bi-cpu-fill"></i> Proses Clustering
-    </a>
-</li>
-{% else %}
-<li>
-    <a href="#" class="locked-menu">
-        <i class="bi bi-cpu-fill"></i> Proses Clustering
-        <i class="fas fa-lock text-warning float-end"></i>
-    </a>
-</li>
-{% endif %}        
-
-{% if request.user.is_profile_complete %}
-<li>
-    <a href="{% url 'clustering_result' %}">
-        <i class="bi bi-diagram-3-fill"></i> Hasil Clustering
-    </a>
-</li>
-{% else %}
-<li>
-    <a href="#" class="locked-menu">
-        <i class="bi bi-diagram-3-fill"></i> Hasil Clustering
-        <i class="fas fa-lock text-warning float-end"></i>
-    </a>
-</li>
-
-{% endif %}        
-
-{% if request.user.is_profile_complete %}
-<li>
-    <a href="{% url 'clustering_history' %}">
-        <i class="bi bi-clock-history"></i> History Clustering
-    </a>
-</li>
-{% else %}
-<li>
-    <a href="#" class="locked-menu">
-        <i class="bi bi-clock-history"></i> History Clustering
-        <i class="fas fa-lock text-warning float-end"></i>
-    </a>
-</li>
-{% endif %}
-
-{% if request.user.is_profile_complete %}
-<li>
-    <a href="{% url 'download_report' %}">
-        <i class="bi bi-file-earmark-pdf-fill"></i> Laporan
-    </a>
-</li>
-{% else %}
-<li>
-    <a href="#" class="locked-menu">
-        <i class="bi bi-file-earmark-pdf-fill"></i> Laporan
-        <i class="fas fa-lock text-warning float-end"></i>
-    </a>
-</li>
-{% endif %}        
-
-        <hr>
-        <li><a href="{% url 'master_customer' %}"><i class="bi bi-people-fill"></i> Master Customer</a></li>        
-        <li><a href="{% url 'master_barang' %}"><i class="bi bi-box-seam-fill"></i> Master Barang</a></li>
-        <li><a href="{% url 'master_label' %}"><i class="bi bi-tags-fill"></i> Master Label</a></li>
-        <li><a href="{% url 'master_kemasan' %}"><i class="bi bi-archive-fill"></i> Master Kemasan</a></li>
-        <hr>
-        <li><a href="{% url 'change_password' %}"><i class="bi bi-key-fill"></i> Ganti Password</a></li>
-        <li><a href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
-    </ul>
-</div>
-
-<!-- MAIN -->
-<div class="main">
-
-    <!-- TOPBAR -->
-    <div class="topbar">
-
-        <!-- SAPAAN -->
-        <div class="top-left">
-
-            <h3 id="greeting" class="fw-bold mb-1">
-                Selamat Datang 👋
-            </h3>
-
-            <small class="text-muted" id="greetingText">
-                Semoga aktivitas Anda menyenangkan hari ini.
-            </small>
-
-        </div>
-
-        <!-- JAM + USER -->
-        <div class="top-right d-flex align-items-center gap-4">
-
-            <div class="text-end">
-                <div id="clock" class="fw-semibold"></div>
-            </div>
-
-            {% if request.user.is_authenticated %}
-
-            <div class="dropdown">
-
-                <a href="#"
-                   class="d-flex align-items-center text-decoration-none"
-                   data-bs-toggle="dropdown"
-                   aria-expanded="false">
-
-                    {% if request.user.foto_profil %}
-
-                        <img src="{{ request.user.foto_profil.url }}"
-                             width="48"
-                             height="48"
-                             class="rounded-circle border border-3 border-primary object-fit-cover">
-
-                    {% else %}
-
-                        <img src="{% static 'images/default.jpg' %}"
-                             width="48"
-                             height="48"
-                             class="rounded-circle border border-3 border-primary">
-
-                    {% endif %}
-
-                    <div class="ms-2 text-start">
-
-                        <strong>
-
-                            {% if request.user.get_full_name %}
-                            {{ request.user.get_full_name }}
-                            {% else %}
-                            {{ request.user.username }}
-                                {% endif %}
-
-                        </strong>
-
-                        <br>
-
-                        <small class="text-muted">
-                            Administrator
-                        </small>
-
-                    </div>
-
+            <!-- Preprocessing -->
+            <li class="main-menu-item">
+                <a href="javascript:void(0)" onclick="enterFocusMode('preprocessing')">
+                    <i class="bi bi-gear-wide-connected"></i> Preprocessing
                 </a>
+            </li>
 
-                <ul class="dropdown-menu dropdown-menu-end shadow">
+            <!-- Clustering -->
+            <li class="main-menu-item">
+                <a href="javascript:void(0)" onclick="enterFocusMode('clustering')">
+                    <i class="bi bi-diagram-3-fill"></i> Clustering
+                </a>
+            </li>
 
-                    <li>
+            <!-- Visualisasi -->
+            <li class="main-menu-item">
+                <a href="javascript:void(0)" onclick="enterFocusMode('visualisasi')">
+                    <i class="bi bi-bar-chart-fill"></i> Visualisasi
+                </a>
+            </li>
 
-                        <a class="dropdown-item"
-                           href="{% url 'profile' %}">
+            <li class="main-menu-item">
+                <a href="{% url 'clustering_result' %}"><i class="bi bi-lightbulb-fill"></i> Hasil & Interpretasi</a>
+            </li>
+            <li class="main-menu-item">
+                <a href="{% url 'download_report' %}"><i class="bi bi-file-earmark-text-fill"></i> Laporan</a>
+            </li>
 
-                            <i class="fas fa-user me-2"></i>
+            <div class="sidebar-divider main-menu-item"></div>
 
-                            Profil Saya
+            <!-- Master Data -->
+            <li class="main-menu-item">
+                <a href="#submenuMaster" class="menu-parent" data-bs-toggle="collapse">
+                    <span><i class="bi bi-database-fill"></i> Master Data</span>
+                    <i class="bi bi-chevron-down chevron"></i>
+                </a>
+                <div class="collapse" id="submenuMaster">
+                    <ul class="submenu">
+                        <li><a href="{% url 'master_customer' %}">Master Customer</a></li>
+                        <li><a href="{% url 'master_barang' %}">Master Barang</a></li>
+                        <li><a href="{% url 'master_label' %}">Master Label</a></li>
+                        <li><a href="{% url 'master_kemasan' %}">Master Kemasan</a></li>
+                    </ul>
+                </div>
+            </li>
 
-                        </a>
+            <!-- Pengaturan -->
+            <li class="main-menu-item">
+                <a href="#submenuPengaturan" class="menu-parent" data-bs-toggle="collapse">
+                    <span><i class="bi bi-gear-fill"></i> Pengaturan</span>
+                    <i class="bi bi-chevron-down chevron"></i>
+                </a>
+                <div class="collapse" id="submenuPengaturan">
+                    <ul class="submenu">
+                        <li><a href="{% url 'profile' %}">Profil Saya</a></li>
+                        <li><a href="{% url 'change_password' %}">Ganti Password</a></li>
+                        <li><a href="{% url 'preferensi' %}">Preferensi & Tema</a></li>
+                    </ul>
+                </div>
+            </li>
 
-                    </li>
+            <li class="main-menu-item">
+                <a href="javascript:void(0)" onclick="showAbout()"><i class="bi bi-info-circle-fill"></i> Tentang Aplikasi</a>
+            </li>
+            <li class="main-menu-item">
+                <a href="{% url 'pengaduan' %}"><i class="bi bi-chat-left-text-fill"></i> Pengaduan</a>
+            </li>
+        </ul>
 
-                    <li>
+        <!-- FOCUS: Clustering -->
+        <ul id="focus-clustering" class="d-none">
+            <li><a href="{% url 'upload_data' %}"><i class="bi bi-upload"></i> Upload Data</a></li>
+            <li><a href="{% url 'run_clustering' %}"><i class="bi bi-cpu"></i> Proses Clustering</a></li>
+            <li><a href="{% url 'clustering_result' %}"><i class="bi bi-bar-chart"></i> Hasil Clustering</a></li>
+            <li><a href="{% url 'clustering_history' %}"><i class="bi bi-clock-history"></i> History Clustering</a></li>
+            <li><a href="{% url 'download_report' %}"><i class="bi bi-download"></i> Unduh Hasil</a></li>
+        </ul>
 
-                        <a class="dropdown-item"
-                           href="{% url 'change_password' %}">
+        <!-- FOCUS: Preprocessing -->
+        <ul id="focus-preprocessing" class="d-none">
+            <li><a href="{% url 'preprocessing_bersih' %}"><i class="bi bi-brush"></i> Pembersihan Data</a></li>
+            <li><a href="{% url 'preprocessing_normalisasi' %}"><i class="bi bi-sliders"></i> Normalisasi</a></li>
+            <li><a href="{% url 'preprocessing_seleksi' %}"><i class="bi bi-funnel"></i> Seleksi Fitur</a></li>
+            <li><a href="{% url 'preprocessing_outlier' %}"><i class="bi bi-exclamation-triangle"></i> Deteksi Outlier</a></li>
+        </ul>
 
-                            <i class="fas fa-key me-2"></i>
-
-                            Ganti Password
-
-                        </a>
-
-                    </li>
-
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-
-                    <li>
-
-                        <a class="dropdown-item text-danger"
-                           href="{% url 'logout' %}">
-
-                            <i class="fas fa-sign-out-alt me-2"></i>
-
-                            Logout
-
-                        </a>
-
-                    </li>
-
-                </ul>
-
-            </div>
-
-            {% endif %}
-
-        </div>
-
+        <!-- FOCUS: Visualisasi -->
+        <ul id="focus-visualisasi" class="d-none">
+            <li><a href="{% url 'visualisasi_distribusi' %}"><i class="bi bi-bar-chart"></i> Grafik Distribusi</a></li>
+            <li><a href="{% url 'visualisasi_scatter' %}"><i class="bi bi-graph-up"></i> Scatter Plot</a></li>
+            <li><a href="{% url 'visualisasi_heatmap' %}"><i class="bi bi-grid-3x3"></i> Heatmap</a></li>
+            <li><a href="{% url 'visualisasi_elbow' %}"><i class="bi bi-activity"></i> Elbow Method</a></li>
+            <li><a href="{% url 'visualisasi_radar' %}"><i class="bi bi-radar"></i> Radar Chart</a></li>
+        </ul>
     </div>
 
-    <div class="container-fluid p-4">
-
-        {% if request.user.is_authenticated and not request.user.is_profile_complete %}
-
-<div class="alert alert-warning border-0 shadow-lg mb-4">
-
-    <h4>
-        <i class="fas fa-exclamation-triangle"></i>
-        Profil Belum Lengkap
-    </h4>
-
-    <p class="mb-3">
-        Selamat datang
-        <strong>{{ request.user.first_name|default:request.user.username }}</strong>.
-        Sebelum menggunakan seluruh fitur KlasterKu,
-        Anda wajib melengkapi data diri terlebih dahulu.
-    </p>
-
-    <a href="{% url 'profile' %}" class="btn btn-warning">
-
-        <i class="fas fa-user-edit"></i>
-
-        Lengkapi Profil
-
-    </a>
-
+    <div class="sidebar-footer">
+        KlasterKu v1.0.0<br>
+        © 2026 PT Sinar Multi Kemindo
+    </div>
 </div>
 
-{% endif %}
-        {% block content %}
-
-        {% endblock %}
-
+<div class="main">
+    <div class="topbar">
+        <div>
+            <h5 class="mb-0 fw-semibold" id="greeting">Selamat Datang</h5>
+            <small class="text-muted" id="greetingText">Sistem Segmentasi Pelanggan</small>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div id="clock" class="text-muted small"></div>
+            {% if request.user.is_authenticated %}
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-decoration-none gap-2" data-bs-toggle="dropdown">
+                    {% if request.user.foto_profil %}
+                        <img src="{{ request.user.foto_profil.url }}" width="38" height="38" class="rounded-circle border border-2 border-primary object-fit-cover">
+                    {% else %}
+                        <img src="{% static 'images/default.jpg' %}" width="38" height="38" class="rounded-circle border border-2 border-primary">
+                    {% endif %}
+                    <div class="d-none d-md-block text-start">
+                        <div class="fw-semibold" style="font-size:13.5px; color:var(--text);">
+                            {% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}{{ request.user.username }}{% endif %}
+                        </div>
+                        <small class="text-muted">Administrator</small>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                    <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i> Profil Saya</a></li>
+                    <li><a class="dropdown-item" href="{% url 'change_password' %}"><i class="fas fa-key me-2"></i> Ganti Password</a></li>
+                    <li><a class="dropdown-item" href="{% url 'preferensi' %}"><i class="fas fa-palette me-2"></i> Preferensi</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmLogout()"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>                
+                </ul>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- FOOTER -->
-    <footer class="bg-white border-top py-3 mt-auto">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <small class="text-muted">
-                        © 2026 <strong>KlasterKu</strong> | Customer Segmentation System | PT Sinar Multi Kemindo
-                    </small>
+    <div class="content-wrapper">
+        {% if request.user.is_authenticated and not request.user.is_profile_complete %}
+        <div class="alert alert-warning border-0 shadow-sm mb-4">
+            <h5 class="mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Profil Belum Lengkap</h5>
+            <p class="mb-3">Silakan lengkapi profil terlebih dahulu.</p>
+            <a href="{% url 'profile' %}" class="btn btn-warning btn-sm">Lengkapi Profil</a>
+        </div>
+        {% endif %}
+
+        <!-- SLIDER AUTO-SLIDE (TANPA PANAH) MENARIK DATA MASTER BARANG -->
+        <div id="dashboardCarousel" class="carousel slide mb-4 shadow-sm" data-bs-ride="carousel" data-bs-interval="4000" style="border-radius: 16px; overflow: hidden;">
+            <div class="carousel-inner">
+                
+                <!-- Slide 1: Iklan / Promosi Perusahaan -->
+                <div class="carousel-item active text-white p-4 p-md-5" style="background: linear-gradient(135deg, #0f2c59 0%, #2563eb 100%);">
+                    <div class="row g-0 align-items-center">
+                        <div class="col-lg-8">
+                            <span class="badge bg-warning text-dark mb-2 px-3 py-1.5 fw-semibold rounded-pill" style="font-size: 12px;">
+                                <i class="fas fa-bullhorn me-1"></i> Informasi & Promosi Perusahaan
+                            </span>
+                            <h2 class="fw-bold mb-2 text-white">PT Sinar Multi Kemindo</h2>
+                            <p class="mb-4 text-white-50" style="font-size: 15px; line-height: 1.6;">
+                                Solusi terpercaya untuk kebutuhan industri kimia dan produk berkualitas tinggi. Tingkatkan efisiensi bisnis Anda bersama layanan profesional kami.
+                            </p>
+                            <a href="https://sinarmultikemindo.com" target="_blank" class="btn btn-light text-primary fw-semibold px-4 py-2 shadow-sm">
+                                <i class="fas fa-globe me-2"></i> Kunjungi Website Resmi
+                            </a>
+                        </div>
+                        <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                            <div class="position-relative d-inline-block p-2 bg-white bg-opacity-10 rounded-4 shadow-lg">
+                                <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=500&q=80" 
+                                     alt="Iklan Produk" class="img-fluid rounded-3 object-fit-cover" style="width: 100%; max-width: 280px; height: 180px;">
+                                <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white small py-1 rounded-bottom-3 text-center" style="font-size: 11px;">
+                                    <i class="fas fa-tag me-1 text-warning"></i> Produk Unggulan
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6 text-end">
-                    <small class="text-muted">Developed by Muhammad Riyaldi</small>
+
+                <!-- Slide 2: Stok Barang Tersedikit / Menipis (Diambil dari Master Barang database) -->
+                <div class="carousel-item text-white p-4 p-md-5" style="background: linear-gradient(135deg, #b45309 0%, #d97706 100%);">
+                    <div class="row g-0 align-items-center">
+                        <div class="col-lg-8">
+                            <span class="badge bg-light text-dark mb-2 px-3 py-1.5 fw-semibold rounded-pill" style="font-size: 12px;">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Peringatan Stok Menipis
+                            </span>
+                            <h2 class="fw-bold mb-2 text-white">
+                                {% if barang_tersedikit %}
+                                    {{ barang_tersedikit.nama_barang }}
+                                {% else %}
+                                    Stok Barang Tersedikit
+                                {% endif %}
+                            </h2>
+                            <p class="mb-4 text-white-50" style="font-size: 15px; line-height: 1.6;">
+                                {% if barang_tersedikit %}
+                                    Sisa Stok Tersisa: <strong class="text-white">{{ barang_tersedikit.stok }} Unit</strong>. Segera lakukan pengadaan atau restock barang ini agar operasional tetap lancar.
+                                {% else %}
+                                    Belum ada data master barang yang tercatat atau stok aman.
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'master_barang' %}" class="btn btn-light text-warning fw-semibold px-4 py-2 shadow-sm">
+                                <i class="fas fa-boxes me-2"></i> Kelola Master Barang
+                            </a>
+                        </div>
+                        <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                            <div class="p-4 bg-white bg-opacity-10 rounded-4 shadow-lg text-white">
+                                <i class="fas fa-box-open fa-3x mb-2 text-warning"></i>
+                                <h4 class="fw-bold mb-0">{% if barang_tersedikit %}{{ barang_tersedikit.stok }}{% else %}0{% endif %}</h4>
+                                <small class="text-white-50">Kuantitas Minimum</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Slide 3: Stok Barang Expired (Diambil dari Master Barang database) -->
+                <div class="carousel-item text-white p-4 p-md-5" style="background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);">
+                    <div class="row g-0 align-items-center">
+                        <div class="col-lg-8">
+                            <span class="badge bg-warning text-dark mb-2 px-3 py-1.5 fw-semibold rounded-pill" style="font-size: 12px;">
+                                <i class="fas fa-skull-crossbones me-1"></i> Peringatan Kadaluarsa (Expired)
+                            </span>
+                            <h2 class="fw-bold mb-2 text-white">
+                                {% if barang_expired %}
+                                    {{ barang_expired.nama_barang }}
+                                {% else %}
+                                    Tidak Ada Barang Expired
+                                {% endif %}
+                            </h2>
+                            <p class="mb-4 text-white-50" style="font-size: 15px; line-height: 1.6;">
+                                {% if barang_expired %}
+                                    Tanggal Kadaluarsa: <strong class="text-white">{{ barang_expired.tanggal_expired|date:"d M Y" }}</strong>. Produk ini telah melewati atau mendekati batas masa berlakunya. Segera tarik dari inventaris.
+                                {% else %}
+                                    Aman! Tidak ditemukan produk yang melewati masa kadaluarsa dalam master data.
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'master_barang' %}" class="btn btn-light text-danger fw-semibold px-4 py-2 shadow-sm">
+                                <i class="fas fa-calendar-times me-2"></i> Cek Detail Barang
+                            </a>
+                        </div>
+                        <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                            <div class="p-4 bg-white bg-opacity-10 rounded-4 shadow-lg text-white">
+                                <i class="fas fa-biohazard fa-3x mb-2 text-warning"></i>
+                                <h5 class="fw-bold mb-1">Status Expired</h5>
+                                <p class="small mb-0 text-white-50">Periksa gudang segera.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+        </div>
+        <!-- END SLIDER CAROUSEL -->
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer>
+        <div class="d-flex justify-content-between">
+            <span>© 2026 <strong>KlasterKu</strong> • PT Sinar Multi Kemindo</span>
+            <span>Developed by Muhammad Riyaldi</span>
         </div>
     </footer>
 </div>
 
-<!-- MOBILE BUTTON -->
-<button class="btn btn-primary d-lg-none position-fixed" id="toggleSidebar"
-        style="bottom:20px; left:20px; z-index:1200; border-radius:50%; width:55px; height:55px;">
+<button class="btn btn-primary d-lg-none position-fixed rounded-circle shadow" id="toggleSidebar"
+        style="bottom:24px; left:24px; z-index:1200; width:52px; height:52px;">
     <i class="fas fa-bars"></i>
 </button>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-// Sidebar Toggle
+// Theme
+(function() {
+    const saved = localStorage.getItem('klasterku-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+})();
+
 const sidebar = document.getElementById("sidebar");
 const toggle = document.getElementById("toggleSidebar");
-if(toggle){
-    toggle.addEventListener("click", () => sidebar.classList.toggle("show"));
-}
+if (toggle) toggle.addEventListener("click", () => sidebar.classList.toggle("show"));
 
-// Clock
-function updateClock(){
+function updateClock() {
     const now = new Date();
-    const options = {weekday:'long', day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'};
-    const jam = document.getElementById("clock");
-    if(jam) jam.innerHTML = now.toLocaleDateString('id-ID', options);
+    document.getElementById("clock").innerHTML = now.toLocaleDateString('id-ID', {
+        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-function updateGreeting(){
-
+function updateGreeting() {
     const hour = new Date().getHours();
-
-    let salam = "";
-    let pesan = "";
-
-    if(hour >= 4 && hour < 10){
-
-        salam = "☀️ Selamat Pagi";
-
-        pesan = "Semoga pekerjaan Anda hari ini berjalan lancar.";
-
-    }
-
-    else if(hour >= 10 && hour < 15){
-
-        salam = "🌤️ Selamat Siang";
-
-        pesan = "Semoga aktivitas Anda menyenangkan hari ini.";
-
-    }
-
-    else if(hour >= 15 && hour < 18){
-
-        salam = "🌇 Selamat Sore";
-
-        pesan = "Semoga hari Anda tetap produktif.";
-
-    }
-
-    else{
-
-        salam = "🌙 Selamat Malam";
-
-        pesan = "Terima kasih telah menggunakan KlasterKu.";
-
-    }
-
+    let salam = hour < 10 ? "☀️ Selamat Pagi" : hour < 15 ? "🌤️ Selamat Siang" : hour < 18 ? "🌇 Selamat Sore" : "🌙 Selamat Malam";
     const nama = "{% if request.user.get_full_name %}{{ request.user.get_full_name }}{% else %}{{ request.user.username }}{% endif %}";
-
-    document.getElementById("greeting").innerHTML =
-
-        salam + ", " + nama + " 👋";
-
-    document.getElementById("greetingText").innerHTML = pesan;
-
+    document.getElementById("greeting").innerHTML = salam + ", " + nama;
 }
-
 updateGreeting();
 
-// Active Menu
-document.addEventListener("DOMContentLoaded", function(){
-    let current = window.location.pathname;
-    document.querySelectorAll(".sidebar a").forEach(item => {
-        if(item.getAttribute("href") === current){
-            item.classList.add("active");
+function enterFocusMode(section) {
+    document.querySelectorAll('.main-menu-item').forEach(el => el.style.display = 'none');
+    document.getElementById('focusHeader').style.display = 'block';
+    document.querySelectorAll('[id^="focus-"]').forEach(el => el.classList.add('d-none'));
+    const target = document.getElementById('focus-' + section);
+    if (target) target.classList.remove('d-none');
+}
+
+function exitFocusMode() {
+    document.querySelectorAll('.main-menu-item').forEach(el => el.style.display = '');
+    document.getElementById('focusHeader').style.display = 'none';
+    document.querySelectorAll('[id^="focus-"]').forEach(el => el.classList.add('d-none'));
+}
+
+function showAbout() {
+    Swal.fire({
+        title: 'KlasterKu v1.0.0',
+        html: `<p><strong>Sistem Segmentasi Pelanggan</strong></p>
+               <p>PT Sinar Multi Kemindo</p>
+               <p class="text-muted small">Dikembangkan oleh Muhammad Riyaldi</p>
+               <hr>
+               <p class="small text-start">Aplikasi berbasis web untuk segmentasi pelanggan menggunakan algoritma K-Means Clustering.</p>`,
+        icon: 'info'
+    });
+}
+
+function confirmLogout() {
+    Swal.fire({
+        title: 'Anda yakin ingin keluar?',
+        text: 'Sesi Anda akan berakhir dan Anda harus login kembali.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Logout',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        focusCancel: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Sedang keluar...',
+                text: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            window.location.href = "{% url 'logout' %}";
         }
     });
-});
+}
 </script>
 
-<!-- Messages -->
 {% if messages %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -540,34 +589,5 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 {% endif %}
-
-<script>
-document.querySelectorAll(".locked-menu").forEach(function(menu){
-
-    menu.addEventListener("click", function(e){
-
-        e.preventDefault();
-
-        Swal.fire({
-            icon: "warning",
-            title: "Profil Belum Lengkap",
-            html: `
-                <p>Silakan lengkapi data diri terlebih dahulu.</p>
-                <small>Setelah profil lengkap, seluruh menu akan terbuka.</small>
-            `,
-            confirmButtonText: "Lengkapi Profil"
-        }).then((result)=>{
-
-            if(result.isConfirmed){
-                window.location.href = "{% url 'profile' %}";
-            }
-
-        });
-
-    });
-
-});
-</script>
-
 </body>
 </html>

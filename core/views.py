@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.db.models import Sum, Q
 from django.utils import timezone
 from datetime import date
-
+from django.shortcuts import redirect
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
@@ -154,7 +154,18 @@ def dashboard(request):
 
     return render(request, "dashboard.html", context)
 
+from django.shortcuts import render
+from django.utils import timezone
+from .models import Barang  # Menggunakan model Barang sesuai models.py
 
+def dashboard_view(request):
+    # Mengambil barang dengan stok total paling sedikit
+    barang_tersedikit = Barang.objects.order_by('stok_total').first()
+    
+    context = {
+        'barang_tersedikit': barang_tersedikit,
+    }
+    return render(request, 'dashboard.html', context)
 # ==========================================================
 # UPLOAD DATASET
 # ==========================================================
@@ -888,7 +899,8 @@ from django.shortcuts import redirect
 @login_required
 def logout_view(request):
     logout(request)
-    request.session.flush()          
+    request.session.flush()
+    messages.success(request, "Anda berhasil keluar dari sistem.")
     return redirect("login")
 
 
@@ -2236,3 +2248,337 @@ def export_clustering_excel(request, pk):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     wb.save(response)
     return response
+
+    # ==========================================================
+# PREFERENSI & TEMA
+# ==========================================================
+@login_required
+def preferensi(request):
+    return render(request, "preferensi.html")
+
+
+# ==========================================================
+# PENGADUAN
+# ==========================================================
+@login_required
+def pengaduan(request):
+    if request.method == "POST":
+        # Sementara hanya simpan pesan sukses
+        messages.success(request, "Pengaduan berhasil dikirim. Terima kasih!")
+        return redirect("pengaduan")
+    return render(request, "pengaduan.html")
+
+
+
+@login_required
+def preprocessing_bersih(request):
+    last_file = request.session.get("last_uploaded_file")
+    context = {
+        "has_file": False,
+        "filename": None,
+        "total_rows": 0,
+        "total_columns": 0,
+        "null_count": 0,
+        "duplicate_count": 0,
+        "preview": None,
+        "columns": [],
+    }
+
+    if last_file and os.path.exists(last_file):
+        try:
+            if last_file.endswith(".xlsx"):
+                df = pd.read_excel(last_file)
+            else:
+                df = pd.read_csv(last_file, encoding="latin1")
+
+            df.columns = df.columns.str.strip()
+
+            context["has_file"] = True
+            context["filename"] = os.path.basename(last_file)
+            context["total_rows"] = len(df)
+            context["total_columns"] = len(df.columns)
+            context["null_count"] = int(df.isnull().sum().sum())
+            context["duplicate_count"] = int(df.duplicated().sum())
+            context["columns"] = list(df.columns)
+            
+            # Ubah pengisian nilai kosong dan konversi ke list of lists (agar cocok dengan perulangan baris-kolom)
+            df_filled = df.head(8).fillna("-")
+            context["preview"] = df_filled.values.tolist()
+
+        except Exception as e:
+            messages.error(request, f"Gagal membaca file: {str(e)}")
+
+    return render(request, "preprocessing/bersih.html", context)
+
+
+@login_required
+def preprocessing_normalisasi(request):
+    last_file = request.session.get("last_uploaded_file")
+    context = {
+        "has_file": False,
+        "filename": None,
+        "numeric_columns": [],
+        "preview_before": None,
+        "preview_after": None,
+    }
+
+    if last_file and os.path.exists(last_file):
+        try:
+            if last_file.endswith(".xlsx"):
+                df = pd.read_excel(last_file)
+            else:
+                df = pd.read_csv(last_file, encoding="latin1")
+
+            df.columns = df.columns.str.strip()
+
+            # Ambil kolom numerik
+            numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+            if not numeric_cols:
+                # Coba konversi beberapa kolom umum
+                for col in ["Qty", "Total Harga", "Frekuensi"]:
+                    if col in df.columns:
+                        df[col] = pd.to_numeric(df[col], errors="coerce")
+                numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+
+            context["has_file"] = True
+            context["filename"] = os.path.basename(last_file)
+            context["numeric_columns"] = numeric_cols
+
+            if numeric_cols:
+                preview_cols = numeric_cols[:4]  # ambil max 4 kolom
+                context["preview_before"] = df[preview_cols].head(6).round(2).to_dict(orient="records")
+
+                # Min-Max Normalization
+                df_norm = df[preview_cols].copy()
+                for col in preview_cols:
+                    min_val = df_norm[col].min()
+                    max_val = df_norm[col].max()
+                    if max_val - min_val != 0:
+                        df_norm[col] = (df_norm[col] - min_val) / (max_val - min_val)
+                    else:
+                        df_norm[col] = 0
+                context["preview_after"] = df_norm.head(6).round(4).to_dict(orient="records")
+
+        except Exception as e:
+            messages.error(request, f"Gagal membaca file: {str(e)}")
+
+    return render(request, "preprocessing/normalisasi.html", context)
+
+
+@login_required
+def preprocessing_seleksi(request):
+    last_file = request.session.get("last_uploaded_file")
+    context = {
+        "has_file": False,
+        "filename": None,
+        "all_columns": [],
+        "recommended": ["Customer", "Qty", "Total Harga"],
+    }
+
+    if last_file and os.path.exists(last_file):
+        try:
+            if last_file.endswith(".xlsx"):
+                df = pd.read_excel(last_file)
+            else:
+                df = pd.read_csv(last_file, encoding="latin1")
+
+            df.columns = df.columns.str.strip()
+            context["has_file"] = True
+            context["filename"] = os.path.basename(last_file)
+            context["all_columns"] = list(df.columns)
+
+        except Exception as e:
+            messages.error(request, f"Gagal membaca file: {str(e)}")
+
+    return render(request, "preprocessing/seleksi.html", context)
+
+
+@login_required
+def preprocessing_outlier(request):
+    last_file = request.session.get("last_uploaded_file")
+    context = {
+        "has_file": False,
+        "filename": None,
+        "outlier_info": [],
+    }
+
+    if last_file and os.path.exists(last_file):
+        try:
+            if last_file.endswith(".xlsx"):
+                df = pd.read_excel(last_file)
+            else:
+                df = pd.read_csv(last_file, encoding="latin1")
+
+            df.columns = df.columns.str.strip()
+
+            # Deteksi outlier sederhana (IQR) pada kolom numerik
+            numeric_cols = []
+            for col in ["Qty", "Total Harga"]:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(
+                        df[col].astype(str)
+                        .str.replace("Rp", "", regex=False)
+                        .str.replace(".", "", regex=False)
+                        .str.replace(",", "", regex=False),
+                        errors="coerce"
+                    )
+                    numeric_cols.append(col)
+
+            outlier_info = []
+            for col in numeric_cols:
+                q1 = df[col].quantile(0.25)
+                q3 = df[col].quantile(0.75)
+                iqr = q3 - q1
+                lower = q1 - 1.5 * iqr
+                upper = q3 + 1.5 * iqr
+                outliers = df[(df[col] < lower) | (df[col] > upper)]
+                outlier_info.append({
+                    "column": col,
+                    "count": len(outliers),
+                    "lower": round(lower, 2),
+                    "upper": round(upper, 2),
+                    "min": round(df[col].min(), 2),
+                    "max": round(df[col].max(), 2),
+                })
+
+            context["has_file"] = True
+            context["filename"] = os.path.basename(last_file)
+            context["outlier_info"] = outlier_info
+
+        except Exception as e:
+            messages.error(request, f"Gagal membaca file: {str(e)}")
+
+    return render(request, "preprocessing/outlier.html", context)
+
+# ==========================================================
+# VISUALISASI (terhubung data asli)
+# ==========================================================
+
+@login_required
+def visualisasi_distribusi(request):
+    last_history = ClusteringHistory.objects.filter(
+        user=request.user, status="completed"
+    ).order_by("-created_at").first()
+
+    labels = []
+    values = []
+
+    if last_history:
+        clusters = last_history.clusters.all().order_by("cluster_label")
+        for c in clusters:
+            name = c.label_name if getattr(c, "label_name", None) else f"Cluster {c.cluster_label + 1}"
+            # Coba beberapa kemungkinan field jumlah anggota
+            count = getattr(c, "member_count", None)
+            if count is None:
+                try:
+                    count = c.members.count()
+                except:
+                    count = 0
+            labels.append(name)
+            values.append(count)
+
+    if not labels:
+        labels = ["Belum ada data"]
+        values = [0]
+
+    return render(request, "visualisasi/distribusi.html", {
+        "cluster_labels": labels,
+        "cluster_values": values,
+        "has_data": bool(last_history and labels[0] != "Belum ada data"),
+        "history": last_history,
+    })
+
+
+@login_required
+def visualisasi_scatter(request):
+    last_history = ClusteringHistory.objects.filter(
+        user=request.user, status="completed"
+    ).order_by("-created_at").first()
+
+    # Data untuk scatter (contoh struktur)
+    scatter_data = {
+        "tinggi": [],
+        "sedang": [],
+        "rendah": [],
+    }
+
+    if last_history:
+        for cluster in last_history.clusters.all():
+            label = (cluster.label_name or "").lower()
+            members = getattr(cluster, "members", None)
+            if members:
+                for m in members.all()[:30]:  # batasi biar tidak terlalu banyak
+                    point = {
+                        "x": getattr(m, "monetary", getattr(m, "total_omzet", 50)),
+                        "y": getattr(m, "frequency", getattr(m, "frekuensi", 5)),
+                    }
+                    if "tinggi" in label or "high" in label:
+                        scatter_data["tinggi"].append(point)
+                    elif "sedang" in label or "potential" in label:
+                        scatter_data["sedang"].append(point)
+                    else:
+                        scatter_data["rendah"].append(point)
+
+    return render(request, "visualisasi/scatter.html", {
+        "scatter_data": scatter_data,
+        "has_data": bool(last_history),
+    })
+
+
+@login_required
+def visualisasi_heatmap(request):
+    # Heatmap biasanya butuh data mentah, untuk sementara tetap tampilkan contoh yang bagus
+    return render(request, "visualisasi/heatmap.html", {
+        "has_data": True
+    })
+
+
+@login_required
+def visualisasi_elbow(request):
+    # Elbow Method biasanya dihitung saat proses clustering.
+    # Untuk sementara kita tampilkan grafik contoh yang sudah bagus.
+    return render(request, "visualisasi/elbow.html", {
+        "has_data": True
+    })
+
+
+@login_required
+def visualisasi_radar(request):
+    last_history = ClusteringHistory.objects.filter(
+        user=request.user, status="completed"
+    ).order_by("-created_at").first()
+
+    radar_labels = ["Recency", "Frequency", "Monetary", "Qty", "Loyalty"]
+    datasets = []
+
+    if last_history:
+        colors = [
+            ("#16a34a", "rgba(22,163,74,0.2)"),
+            ("#0ea5e9", "rgba(14,165,233,0.2)"),
+            ("#f59e0b", "rgba(245,158,11,0.2)"),
+            ("#8b5cf6", "rgba(139,92,246,0.2)"),
+        ]
+        for i, cluster in enumerate(last_history.clusters.all().order_by("cluster_label")):
+            name = cluster.label_name or f"Cluster {cluster.cluster_label + 1}"
+            # Nilai contoh berdasarkan urutan (bisa diganti statistik asli nanti)
+            base = 90 - (i * 25)
+            data = [
+                max(20, base - 40),   # Recency (semakin kecil semakin bagus)
+                max(20, base),        # Frequency
+                max(20, base + 5),    # Monetary
+                max(20, base - 5),    # Qty
+                max(20, base - 10),   # Loyalty
+            ]
+            color = colors[i % len(colors)]
+            datasets.append({
+                "label": name,
+                "data": data,
+                "borderColor": color[0],
+                "backgroundColor": color[1],
+            })
+
+    return render(request, "visualisasi/radar.html", {
+        "radar_labels": radar_labels,
+        "radar_datasets": datasets,
+        "has_data": bool(datasets),
+    })

@@ -72,6 +72,23 @@ urlpatterns = [
     path('clustering/export/<int:pk>/', views.export_clustering_excel, name='export_clustering_excel'),
     path('clustering/status/<int:pk>/', views.clustering_status, name='clustering_status'),
 
+    # Preferensi & Pengaduan
+    path('preferensi/', views.preferensi, name='preferensi'),
+    path('pengaduan/', views.pengaduan, name='pengaduan'),
+
+# Preprocessing
+    path('preprocessing/bersih/', views.preprocessing_bersih, name='preprocessing_bersih'),
+    path('preprocessing/normalisasi/', views.preprocessing_normalisasi, name='preprocessing_normalisasi'),
+    path('preprocessing/seleksi/', views.preprocessing_seleksi, name='preprocessing_seleksi'),
+    path('preprocessing/outlier/', views.preprocessing_outlier, name='preprocessing_outlier'),
+
+# Visualisasi
+    path('visualisasi/distribusi/', views.visualisasi_distribusi, name='visualisasi_distribusi'),
+    path('visualisasi/scatter/', views.visualisasi_scatter, name='visualisasi_scatter'),
+    path('visualisasi/heatmap/', views.visualisasi_heatmap, name='visualisasi_heatmap'),
+    path('visualisasi/elbow/', views.visualisasi_elbow, name='visualisasi_elbow'),
+    path('visualisasi/radar/', views.visualisasi_radar, name='visualisasi_radar'),
+    
 ]
 
 if settings.DEBUG:
