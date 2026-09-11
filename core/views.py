@@ -456,6 +456,10 @@ def run_clustering(request):
                 km = KMeans(n_clusters=k, random_state=42, n_init=10)
                 km.fit(X_scaled)
                 inertias.append(km.inertia_)
+                elbow_data = {
+            "k_values": list(K_range),
+            "inertias": [round(float(x), 4) for x in inertias],
+            }
 
             # Saran k optimal sederhana
             diffs = np.diff(inertias)
@@ -609,6 +613,7 @@ def run_clustering(request):
                 "algorithm": algorithm,
                 "silhouette_score": silhouette,
                 "dbi_score": dbi,
+                "elbow_data": elbow_data,
                 "optimal_k_suggestion": optimal_k_suggestion,
                 "file_path": last_file,
                 "hasil_file": output_file,
@@ -2723,10 +2728,19 @@ def visualisasi_heatmap(request):
 @login_required
 @role_required("ADMIN", "SALES", "GUDANG")
 def visualisasi_elbow(request):
-    # Elbow Method biasanya dihitung saat proses clustering.
-    # Untuk sementara kita tampilkan grafik contoh yang sudah bagus.
+
+    result = request.session.get("clustering_result", {})
+    elbow_data = result.get("elbow_data", {})
+
+    k_values = elbow_data.get("k_values", [])
+    inertias = elbow_data.get("inertias", [])
+
+    has_data = bool(k_values and inertias)
+
     return render(request, "visualisasi/elbow.html", {
-        "has_data": True
+        "has_data": has_data,
+        "k_values": k_values,
+        "inertias": inertias,
     })
 
 
