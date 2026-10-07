@@ -1,0 +1,17 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Database lokal
+*.sql
+
+# Environment variables
+.env
+
+# Django logs
+*.log

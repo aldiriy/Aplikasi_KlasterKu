@@ -750,7 +750,7 @@ def download_report(request):
     # ====================== HEADER ======================
     story.append(Paragraph("KLASTERKU", title_style))
     story.append(Paragraph("Customer Segmentation System", subtitle_style))
-    story.append(Paragraph("PT Sinar Multi Kemindo", subtitle_style))
+    story.append(Paragraph("PT Mulia Chemicals", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#2563eb"), spaceAfter=8))
     story.append(Paragraph(
         "<b>Laporan Hasil Clustering Customer</b>",
@@ -938,7 +938,7 @@ def download_report(request):
     story.append(Spacer(1, 18))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#94a3b8"), spaceAfter=6))
     story.append(Paragraph(
-        "Laporan digenerate otomatis oleh sistem <b>KlasterKu</b> • PT Sinar Multi Kemindo • © 2026",
+        "Laporan digenerate otomatis oleh sistem <b>KlasterKu</b> • PT Mulia Chemicals • © 2026",
         ParagraphStyle('Footer', parent=small_style, alignment=TA_CENTER)
     ))
 

@@ -1,6 +1,6 @@
 # Aplikasi KlasterKu
 
-Sistem Segmentasi Pelanggan & Manajemen Stok berbasis web untuk **PT Sinar Multi Kemindo**.
+Sistem Segmentasi Pelanggan & Manajemen Stok berbasis web untuk **PT Mulia Chemicals**.
 
 ## Fitur Utama
 
